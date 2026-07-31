@@ -17,6 +17,11 @@
 /.next/
 /out/
 
+# claude
+.claude/
+AGENTS.md
+CLAUDE.md
+
 # production
 /build
 

@@ -9,8 +9,6 @@ interface RatingDisplayProps {
   className?: string;
 }
 
-const STAR_INDEXES = [0, 1, 2, 3, 4];
-
 export function RatingDisplay({
   rating,
   maxRating = 5,
@@ -18,25 +16,32 @@ export function RatingDisplay({
   size = "default",
   className,
 }: RatingDisplayProps) {
-  const fillPercent = Math.max(0, Math.min(1, rating / maxRating)) * 100;
+  const starIndexes = Array.from(
+    { length: Math.max(0, Math.round(maxRating)) },
+    (_, index) => index
+  );
+  const clampedRating = Math.max(0, Math.min(rating, maxRating));
   const starSize = size === "sm" ? "size-3.5" : "size-4";
 
   return (
     <div className={cn("inline-flex items-center gap-1.5", className)}>
-      <span className="relative inline-flex" aria-hidden="true">
-        <span className="flex gap-0.5 text-muted-foreground/35">
-          {STAR_INDEXES.map((index) => (
-            <Star key={index} className={starSize} />
-          ))}
-        </span>
-        <span
-          className="absolute inset-0 flex gap-0.5 overflow-hidden text-primary"
-          style={{ width: `${fillPercent}%` }}
-        >
-          {STAR_INDEXES.map((index) => (
-            <Star key={index} className={cn(starSize, "fill-current")} />
-          ))}
-        </span>
+      <span className="flex gap-0.5" aria-hidden="true">
+        {starIndexes.map((index) => {
+          const starFillPercent =
+            Math.max(0, Math.min(clampedRating - index, 1)) * 100;
+
+          return (
+            <span key={index} className="relative inline-flex">
+              <Star className={cn(starSize, "text-muted-foreground/35")} />
+              <span
+                className="absolute inset-0 overflow-hidden text-primary"
+                style={{ width: `${starFillPercent}%` }}
+              >
+                <Star className={cn(starSize, "fill-current")} />
+              </span>
+            </span>
+          );
+        })}
       </span>
       <span
         className={cn(
