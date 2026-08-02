@@ -2,19 +2,21 @@
 
 A community platform for collectors of omnibuses, absolute editions, deluxe hardcovers, compendiums, and manga deluxe editions. Omni Odyssey's defining feature is helping collectors navigate complicated comic-book continuity through community-created **reading orders**: ordered sequences of collected editions, issues, story arcs, and notes that map out the recommended way to read a character, creator, event, or era.
 
-This repository currently contains the **frontend MVP**: a fully designed, fully interactive Next.js application running entirely on local mock data. There is no real backend yet — see [Planned Supabase integration](#planned-supabase-integration) below.
+This repository now includes a **real backend**: Supabase Auth (email/password) and Postgres back accounts, public collector profiles, and reading orders end to end, with Row Level Security enforcing ownership and visibility. Saves, follows, reviews, comments, collection tracking, image uploads, and OAuth are still frontend-only or mock — see [Current limitations](#current-limitations).
 
 ## Product overview
 
 Collectors already do the work of figuring out reading orders by hand, and that knowledge is scattered across forum threads, wikis, and blog posts. Omni Odyssey gives it a permanent, structured, browsable home, built specifically around the physical/collected-edition side of comics collecting (so reviews cover binding and paper quality alongside the story, not just star ratings).
 
-## MVP features
+## Features
 
-- **Discovery** — featured and recently updated reading orders, full-text search, publisher/category filters, and sort order, all client-side over the mock catalog.
-- **Reading-order detail pages** — title, creator, description, cover art, publisher/category badges, ordered entries with notes, save count, estimated book count, last-updated timestamp, related reading orders, and a mock save button.
-- **Reading-order creation** — a validated form (React Hook Form + Zod) for title, summary, publishers, categories, visibility, and an optional cover image, plus a dynamic list of entries that can be added, removed, and **reordered by drag and drop** (keyboard-accessible via dnd-kit), a live preview, and a mock submission with success feedback.
-- **Collector profiles** — avatar, bio, stats, published reading orders, recent reviews, and a mock follow button.
-- **Reviews** — collected-edition reviews with an overall rating plus optional binding/paper-quality/mapping/extras sub-ratings, each rendered both visually (stars) and numerically.
+- **Accounts** — email/password sign-up and sign-in via Supabase Auth, with a distinct onboarding step to establish a public collector profile (username, display name, bio, location, favorite publishers).
+- **Reading orders, for real** — create, edit, and delete your own reading orders with ordered entries, persisted in Postgres. Public orders are discoverable by anyone; private orders are visible only to their owner, enforced by Row Level Security (not just hidden UI).
+- **Discovery** — full-text-ish search, publisher/category filters, and sort order over public reading orders.
+- **Reading-order detail pages** — title, creator, description, cover art, publisher/category badges, ordered entries with notes, save count, estimated book count, last-updated timestamp, related reading orders, a mock save button, and owner-only edit/delete controls.
+- **Reading-order builder** — a validated form (React Hook Form + Zod, re-validated server-side) with a dynamic entry list, **drag-and-drop reordering** (keyboard-accessible via dnd-kit), a live preview, and real persistence via Server Actions.
+- **Collector profiles** — avatar, bio, stats, published reading orders (including your own private ones when you're viewing your own profile), recent reviews, and a mock follow button.
+- **Reviews** — still fully mock-data-backed this phase (see [Current limitations](#current-limitations)); rendered with both a visual and numeric rating.
 - **Custom not-found pages** for missing reading orders and missing collector profiles, plus a global 404.
 - **Light and dark mode**, following the system preference by default.
 
@@ -24,25 +26,50 @@ Collectors already do the work of figuring out reading orders by hand, and that 
 | --- | --- |
 | `/` | Landing page: hero, featured reading orders, "how it works," recent reviews, community CTA. |
 | `/discover` | Browse and search public reading orders with client-side publisher/category filters and sort. |
-| `/reading-orders/[slug]` | Reading-order detail: metadata, ordered entries, related orders, mock save button. Falls back to a dedicated not-found page for unknown slugs. |
-| `/reading-orders/create` | The reading-order builder: validated form, drag-and-drop entries, live preview, mock submission. |
-| `/users/[username]` | Collector profile: bio, stats, published reading orders, recent reviews, mock follow button. Falls back to a dedicated not-found page for unknown usernames. |
-| `/reviews` | All collected-edition reviews. |
+| `/reading-orders/[slug]` | Reading-order detail. Private orders 404 for everyone except their owner. Owner sees Edit/Delete. |
+| `/reading-orders/create` | The reading-order builder. Requires sign-in and a completed profile. |
+| `/reading-orders/[slug]/edit` | Edit an existing reading order. Owner-only; 404s for anyone else. |
+| `/users/[username]` | Collector profile: bio, stats, published reading orders, recent reviews, mock follow button. |
+| `/reviews` | All collected-edition reviews (mock data). |
 | `/about` | Product explainer and current-status notes. |
+| `/sign-up`, `/sign-in` | Auth pages. |
+| `/onboarding` | One-time public-profile setup after sign-up, before you can create anything. |
 
 Any other path falls back to the root `not-found.tsx`.
 
 ## Technology stack
 
-- [Next.js 16](https://nextjs.org) (App Router, Turbopack)
+- [Next.js 16](https://nextjs.org) (App Router, Turbopack, `proxy.ts` — the current, non-deprecated replacement for `middleware.ts`)
 - TypeScript (strict mode)
+- [Supabase](https://supabase.com) — Postgres, Auth, Row Level Security, via `@supabase/supabase-js` and `@supabase/ssr`
 - Tailwind CSS v4
 - [shadcn/ui](https://ui.shadcn.com) (on top of [Base UI](https://base-ui.com) primitives)
-- React Hook Form + Zod (`@hookform/resolvers`)
+- React Hook Form + Zod (`@hookform/resolvers`), validated again server-side in every Server Action
 - [dnd-kit](https://dndkit.com) for drag-and-drop entry reordering
 - Lucide React for icons
 
 ## Local development
+
+### 1. Set up a Supabase project
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. From **Project Settings → API**, copy the **Project URL** and **publishable (anon) key**.
+3. Copy `.env.example` to `.env.local` and fill in those two values:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+   ```
+   Both are safe to expose to the browser by design — Row Level Security is the real authorization boundary, not secrecy of these values. The project's **secret/service-role key** is never used anywhere in this app; don't put it in any `NEXT_PUBLIC_*` variable or commit it anywhere.
+4. Install the Supabase CLI (already a devDependency — `npx supabase ...`), then:
+   ```bash
+   npx supabase login
+   npx supabase link --project-ref <your-project-ref>
+   npx supabase db push
+   npx supabase gen types typescript --linked > src/types/database.types.ts
+   ```
+5. In **Auth → Providers → Email**, decide whether to keep "Confirm email" on (default; realistic, but the default shared email sender has a low rate limit) or off (faster local iteration — recommended while developing).
+
+### 2. Run the app
 
 ```bash
 npm install
@@ -61,79 +88,82 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run lint` | Run ESLint. |
 | `npm run typecheck` | Run `tsc --noEmit`. |
 
-There is no test suite in this phase (see [Current limitations](#current-limitations)). Pure functions in `lib/utilities`, `lib/repositories`, and `features/reading-orders/utils/filter-sort.ts` were written to be trivially unit-testable once a runner is added.
+There is no test suite in this phase (see [Current limitations](#current-limitations)). Pure functions in `lib/utilities` and `features/reading-orders/utils/filter-sort.ts` were written to be trivially unit-testable once a runner is added.
 
 ## Project structure
 
 ```text
 src/
-  app/                       Routes (App Router)
-    reading-orders/[slug]/   Reading-order detail + not-found
-    reading-orders/create/   Reading-order builder
-    users/[username]/        Collector profile + not-found
+  app/
+    (auth)/sign-up/, (auth)/sign-in/   Auth pages, shared minimal layout
+    onboarding/                        One-time public-profile setup
+    reading-orders/[slug]/             Detail + not-found
+    reading-orders/[slug]/edit/        Owner-only edit
+    reading-orders/create/             Reading-order builder
+    users/[username]/                  Collector profile + not-found
     discover/  reviews/  about/
-  components/
-    layout/                  Header, footer, page container
-    navigation/               Search input, mobile nav, user menu
-    reading-orders/           Cards, badges, cover art, metadata, entry list, save button
-    reviews/                  Review card, rating display
-    profiles/                 Creator summary, stats, follow button
-    forms/                    Field error, confirmation message (built on Card)
-    shared/                   Section heading, empty state, loading skeleton, avatar, metadata stat
-    ui/                       shadcn/ui primitives
+  components/                          Same organization as before — cards, badges, layout, forms, ui/
   features/
+    auth/               schemas, sign-up/sign-in forms, sign-out action
+    profiles/            onboarding schema/form/action
     reading-orders/
-      schemas/                Zod schema + inferred input types for the create form
-      types/                  Search/sort filter types
-      utils/                  Pure filter/sort logic shared by the repository and the client
-      components/             The create-form itself, the draggable entry editor, discover browser
+      schemas/           Zod schema + inferred input types, shared by create and edit
+      actions/           createReadingOrderAction, updateReadingOrderAction, deleteReadingOrderAction
+      utils/             Pure filter/sort logic shared by the repository and the client
+      components/        The (create/edit) form, draggable entry editor, discover browser
   lib/
-    constants/                Publisher/category/entry-type label maps, nav links
-    mock-data/                Users, reading orders (with entries), reviews
-    mock-current-user.ts      The one mock "logged in" user — explicitly not real auth
-    repositories/             The only modules allowed to import mock-data / mock-current-user directly
-    utilities/                slugify, date formatting, number formatting, text truncation
+    supabase/            client.ts (browser), server.ts (per-request server client factory)
+    constants/            Publisher/category/entry-type label maps, nav links
+    mock-data/            Users, reading orders — no longer used by the real repositories; kept as
+                           reference/future seed data. Reviews still use MOCK_REVIEWS/MOCK_USERS.
+    repositories/          users.ts and reading-orders.ts now query Supabase; reviews.ts stays mock
+    utilities/             slugify, date formatting, number formatting, text truncation
   types/
-    domain.ts                 UserProfile, ReadingOrder, ReadingOrderEntry, CollectedEditionReview
+    domain.ts              UserProfile, ReadingOrder, ReadingOrderEntry, CollectedEditionReview
+    database.types.ts      Generated from the live Supabase schema (`supabase gen types typescript`)
+  proxy.ts                 Session-cookie refresh + route protection (Next 16's proxy convention)
+
+supabase/
+  migrations/               SQL migrations (schema + Row Level Security), applied via the CLI
 ```
 
-See [docs/architecture.md](docs/architecture.md) for the reasoning behind this structure, especially the repository abstraction and the Server/Client Component boundaries.
+See [docs/architecture.md](docs/architecture.md) for the reasoning behind this structure, the RLS design, and the auth/onboarding/mutation flows in detail.
 
 ## Architectural decisions
 
-- **Repository layer, not direct mock-data imports.** Pages and components call functions like `getFeaturedReadingOrders()` or `getReadingOrderBySlug(slug)` from `lib/repositories`, never the mock arrays directly. When Supabase is introduced, only these repository functions change (most becoming `async`); call sites should not need to change.
-- **Server Components by default.** Every page and most display components are Server Components. `"use client"` is used only where real interactivity is required: the create-order form and its field array, the drag-and-drop entry editor, the discover page's live filtering, the mobile nav sheet, the user menu, and the save/follow buttons.
-- **Domain types are the single source of truth.** `types/domain.ts` defines `UserProfile`, `ReadingOrder`, `ReadingOrderEntry`, and `CollectedEditionReview` exactly as specified, plus string-union types for `Publisher`, `ReadingOrderCategory`, `ReadingOrderVisibility`, and `ReadingOrderEntryType`. Mock data, Zod schemas, and UI components all consume these same types.
-- **Mock current user is explicitly isolated and labeled as insecure.** `lib/mock-current-user.ts` exports a single fixed `UserProfile`, accessed exclusively through `getCurrentUser()` in `lib/repositories` (never imported directly outside the repository layer) and used for every "logged in" affordance in the app. It is documented in-file as not a security boundary.
-- **Editorial visual identity.** A custom warm "ink and paper" theme (Tailwind v4 CSS-variable tokens, `Fraunces` for headings, `Geist` for body/UI text) replaces the default shadcn neutral palette, with a single restrained amber accent rather than a multi-color system.
-- **Two "boxed surface" conventions, deliberately.** Solid bordered surfaces (`Card`/`CardContent`) are used for the reading-order builder's entry rows and the confirmation message; a distinct dashed-border treatment (`EmptyState`) signals "nothing here yet." Other repeated markup patterns (icon + label metadata rows) are consolidated into small shared components (e.g. `MetadataStat`) rather than copy-pasted across cards.
+- **Repository layer, now real.** `lib/repositories/{users,reading-orders}.ts` query Supabase directly; `reviews.ts` stays mock-backed (see below). Call sites (pages) were already isolated from storage details, so most of this migration was repository-internal — the plan this followed is fully documented in `docs/architecture.md`.
+- **Server Components by default**, with a fresh request-scoped Supabase client (`lib/supabase/server.ts`) created per call — never a shared/singleton client, since that would leak one user's session into another user's request.
+- **`getUser()`, not `getSession()`**, everywhere identity is checked server-side — it re-validates the JWT against Supabase Auth rather than trusting a decoded cookie.
+- **Mutations are Server Actions**, each independently validating the authenticated user, re-validating input with Zod (never trusting client-side validation alone), verifying resource ownership explicitly (not solely relying on RLS), and returning a typed `{success, ...}` / `{success: false, error}` result — never a raw database error.
+- **Row Level Security is the real authorization boundary.** Public/private reading-order visibility and all ownership checks are enforced in Postgres policies, not just hidden UI. See `docs/architecture.md` for the exact policies and the one genuinely tricky part (entry mutation policies must be ownership-only, never "public-or-owner").
+- **Reviews stay fully mock-data-backed this phase**, deliberately decoupled from the real `profiles` table — `reviews.ts` resolves review authors from `MOCK_USERS` internally rather than through the real `getUserById`, since a real Supabase profile's UUID will never match a mock review's `authorId`.
+- **Domain types are still the single source of truth.** `types/domain.ts` is unchanged; Supabase row shapes (`database.types.ts`) are mapped into these domain types inside the repository layer, so nothing above the repository boundary needs to know about the database schema.
+- **Editorial visual identity, unchanged.** The warm "ink and paper" theme, `Fraunces` headings, and restrained amber accent are untouched by this phase.
 
 ## Responsive and accessibility expectations
 
-- **Responsive**: layouts are checked at ~375px (mobile), 768px (tablet), 1280px, and 1440px+ (desktop). Grids collapse from 4 → 3 → 2 columns; the mobile nav uses a slide-out sheet; the discover filter row's selects shrink and wrap below the `sm` breakpoint rather than overflowing.
-- **Forms**: every input has a visible `<Label>`; validation errors are wired via `aria-invalid`/`aria-describedby` to a `FormFieldError`, including on the dynamic entry fields and the publisher/category checkbox groups.
-- **Icon-only controls** (menu toggle, remove-entry, drag handle, account menu) all carry `aria-label`.
-- **Ratings** are never color-only: `RatingDisplay` always renders a numeric value and an `sr-only` text equivalent alongside the star graphic.
-- **Drag-and-drop** entry reordering works via mouse and via keyboard (dnd-kit's `KeyboardSensor`: Space to pick up, arrow keys to move, Space to drop, Escape to cancel), and announces entry-specific position changes to screen readers via `DndContext`'s `accessibility.announcements`.
-- **Not claiming full compliance.** This has been checked manually and with headless-browser scripted verification (drag-and-drop, form validation wiring, focus-visible matching, heading hierarchy, console/hydration-warning sweeps across every route) — it has not been audited with a screen reader or automated accessibility scanner. See [ISSUES.md](ISSUES.md) for a specific, currently-open finding around Button focus-ring rendering.
+- **Responsive**: layouts are checked at ~375px (mobile), 768px (tablet), 1280px, and 1440px+ (desktop).
+- **Forms**: every input has a visible `<Label>`; validation errors are wired via `aria-invalid`/`aria-describedby`, including the auth, onboarding, and reading-order forms.
+- **Icon-only controls** all carry `aria-label`.
+- **Ratings** are never color-only: numeric value plus an `sr-only` text equivalent alongside the star graphic.
+- **Drag-and-drop** entry reordering works via mouse and keyboard, with screen-reader announcements.
+- **Not claiming full compliance.** Checked manually and with headless-browser scripted verification (full sign-up → onboarding → create → edit → delete loop, plus an explicit two-account RLS attack test); not audited with a screen reader or automated accessibility scanner. See [ISSUES.md](ISSUES.md).
 
 ## Current limitations
 
-- **No real backend.** No Supabase, no authentication provider, no database, no server actions, no API routes. All data lives in memory in `lib/mock-data`.
-- **Mutations are session-local and client-scoped.** `createReadingOrderMock` and `saveReadingOrderMock` in the repository layer exist as the intended seam for a future backend call, but because there are no server actions in this phase, the create-form calls `createReadingOrderMock` directly from client code. That mutates an in-memory array that exists only in the browser's JS bundle for that page — it does **not** propagate to the server-rendered Discover page or persist across a refresh. The `SaveButton` and `FollowButton` are deliberately pure client-local UI state for the same reason.
-- **No test suite.** The project was scaffolded without one; see the "Recommended next phase" below. Pure utility/repository functions (`lib/utilities`, `lib/repositories`, `features/reading-orders/utils/filter-sort.ts`) were written to be trivially unit-testable once a test runner is added.
-- **Cover art is always a generated abstract placeholder.** All mock `coverImageUrl` fields are empty strings by design, to avoid depending on external image hosts or copyrighted artwork; `ReadingOrderCover` renders a deterministic gradient + title treatment instead. The component does support real image URLs (via `next/image`) whenever `coverImageUrl` is set — this path is simply unused by the current mock dataset.
+- **Clean cutover, no seed data.** The pre-existing mock reading orders and collector profiles were not migrated into Supabase. Discover and profile pages are empty until real accounts create real content. Mock data files remain in the repo, unused by the live repositories, as reference/future seed material.
+- **Reviews, saves, and follows are still not real.** `SaveButton` and `FollowButton` remain pure client-local UI state (no repository calls, no persistence) — implementing them for real requires their own tables/policies, out of scope this phase. Reviews are still fully mock-data-backed.
+- **No image uploads.** Cover image URLs are still just a pasted URL, not a Supabase Storage upload.
+- **No OAuth.** Email/password only, per this phase's scope.
+- **No DB-level enum for `publishers`/`categories`.** Validated by Zod on every write path; a manual database edit could bypass that. Acceptable tradeoff for this phase.
+- **No test suite.** Pure functions are written to be testable once a runner is added.
 
 See [ISSUES.md](ISSUES.md) for currently-open technical findings and [ROADMAP.md](ROADMAP.md) for what's planned beyond this phase.
 
-## Planned Supabase integration
-
-The anticipated next-phase backend, per the original product brief, adds Supabase for Postgres, auth, Row Level Security, and storage, with tables roughly mapping to: `profiles`, `collected_editions`, `reading_orders`, `reading_order_entries`, `saved_reading_orders`, `follows`, `reviews`, `user_collections`, and `collection_statuses`. The repository functions in `lib/repositories` are the intended integration point — see [docs/architecture.md](docs/architecture.md#future-database-integration-points) for specifics on what changes and what shouldn't.
-
 ## Recommended next development phase
 
-1. Introduce Supabase and replace `lib/repositories` internals with real queries (start with read paths — `getFeaturedReadingOrders`, `getReadingOrderBySlug`, etc. — since call sites are already isolated from storage details).
-2. Add Supabase Auth and replace `lib/mock-current-user.ts` with a real session.
-3. Move `createReadingOrderMock` and `saveReadingOrderMock` behind Server Actions so mutations actually persist and propagate.
-4. Add a test runner (Vitest is a natural fit given no other testing infra exists yet) and cover the pure functions already isolated for this: reading-order filtering/sorting, Zod validation, and slug/date utilities.
-5. Build out the full review-creation workflow (intentionally out of scope for this MVP).
+1. Saves and follows, for real — `saved_reading_orders` and `follows` tables, Server Actions, RLS.
+2. The full review-creation workflow, backed by a real `reviews` table (currently mock-only).
+3. Supabase Storage for cover images and avatars, replacing the plain-URL fields.
+4. A standardized `collected_editions` catalog so reading-order entries and reviews can reference real editions instead of free text.
+5. A test runner (Vitest is a natural fit) covering the pure functions already isolated for this, plus the Server Actions' validation/ownership logic.

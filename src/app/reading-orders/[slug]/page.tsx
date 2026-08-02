@@ -8,10 +8,15 @@ import { ReadingOrderEntryList } from "@/components/reading-orders/reading-order
 import { CompactReadingOrderCard } from "@/components/reading-orders/compact-reading-order-card";
 import { CreatorSummary } from "@/components/profiles/creator-summary";
 import { SaveButton } from "@/components/reading-orders/save-button";
+import { DeleteReadingOrderButton } from "@/components/reading-orders/delete-reading-order-button";
+import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
+import Link from "next/link";
 import {
   getReadingOrderBySlug,
   getRelatedReadingOrders,
   getUserById,
+  getCurrentUser,
 } from "@/lib/repositories";
 
 interface ReadingOrderDetailPageProps {
@@ -22,7 +27,7 @@ export async function generateMetadata({
   params,
 }: ReadingOrderDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const readingOrder = getReadingOrderBySlug(slug);
+  const readingOrder = await getReadingOrderBySlug(slug);
 
   if (!readingOrder) {
     return { title: "Reading order not found" };
@@ -38,19 +43,23 @@ export default async function ReadingOrderDetailPage({
   params,
 }: ReadingOrderDetailPageProps) {
   const { slug } = await params;
-  const readingOrder = getReadingOrderBySlug(slug);
+  const readingOrder = await getReadingOrderBySlug(slug);
 
   if (!readingOrder) {
     notFound();
   }
 
-  const creator = getUserById(readingOrder.creatorId);
+  const [creator, currentUser] = await Promise.all([
+    getUserById(readingOrder.creatorId),
+    getCurrentUser(),
+  ]);
 
   if (!creator) {
     notFound();
   }
 
-  const relatedReadingOrders = getRelatedReadingOrders(readingOrder);
+  const isOwner = currentUser?.id === readingOrder.creatorId;
+  const relatedReadingOrders = await getRelatedReadingOrders(readingOrder);
 
   return (
     <PageContainer as="article" className="space-y-12 py-12">
@@ -79,7 +88,25 @@ export default async function ReadingOrderDetailPage({
 
           <ReadingOrderMetadata readingOrder={readingOrder} />
 
-          <SaveButton initialSaveCount={readingOrder.saveCount} />
+          <div className="flex flex-wrap items-center gap-2">
+            <SaveButton initialSaveCount={readingOrder.saveCount} />
+            {isOwner ? (
+              <>
+                <Button
+                  variant="outline"
+                  render={<Link href={`/reading-orders/${readingOrder.slug}/edit`} />}
+                >
+                  <Pencil aria-hidden="true" />
+                  Edit
+                </Button>
+                <DeleteReadingOrderButton
+                  readingOrderId={readingOrder.id}
+                  readingOrderTitle={readingOrder.title}
+                  creatorUsername={creator.username}
+                />
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
 

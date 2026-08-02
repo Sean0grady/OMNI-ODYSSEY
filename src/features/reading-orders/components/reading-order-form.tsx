@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
@@ -15,7 +16,8 @@ import {
   emptyReadingOrderEntry,
   type CreateReadingOrderInput,
 } from "@/features/reading-orders/schemas/reading-order-schema";
-import { createReadingOrderMock } from "@/lib/repositories";
+import { createReadingOrderAction } from "@/features/reading-orders/actions/create-reading-order";
+import { updateReadingOrderAction } from "@/features/reading-orders/actions/update-reading-order";
 import type { ReadingOrder } from "@/types/domain";
 
 const DEFAULT_VALUES: CreateReadingOrderInput = {
@@ -28,19 +30,48 @@ const DEFAULT_VALUES: CreateReadingOrderInput = {
   entries: [emptyReadingOrderEntry],
 };
 
-export function ReadingOrderForm() {
+interface ReadingOrderFormProps {
+  mode?: "create" | "edit";
+  readingOrderId?: string;
+  defaultValues?: CreateReadingOrderInput;
+}
+
+export function ReadingOrderForm({
+  mode = "create",
+  readingOrderId,
+  defaultValues,
+}: ReadingOrderFormProps) {
+  const router = useRouter();
   const [showPreview, setShowPreview] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<ReadingOrder | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const form = useForm<CreateReadingOrderInput>({
     resolver: zodResolver(createReadingOrderSchema),
-    defaultValues: DEFAULT_VALUES,
+    defaultValues: defaultValues ?? DEFAULT_VALUES,
     mode: "onBlur",
   });
 
-  function onSubmit(data: CreateReadingOrderInput) {
-    const order = createReadingOrderMock(data);
-    setCreatedOrder(order);
+  async function onSubmit(data: CreateReadingOrderInput) {
+    setSubmitError(null);
+
+    if (mode === "edit" && readingOrderId) {
+      const result = await updateReadingOrderAction(readingOrderId, data);
+      if (!result.success) {
+        setSubmitError(result.error);
+        return;
+      }
+      router.push(`/reading-orders/${result.readingOrder.slug}`);
+      router.refresh();
+      return;
+    }
+
+    const result = await createReadingOrderAction(data);
+    if (!result.success) {
+      setSubmitError(result.error);
+      return;
+    }
+    setCreatedOrder(result.readingOrder);
   }
 
   function handleCreateAnother() {
@@ -53,18 +84,22 @@ export function ReadingOrderForm() {
     return (
       <ConfirmationMessage
         title="Reading order created"
-        description={`"${createdOrder.title}" was created with ${createdOrder.entries.length} ${createdOrder.entries.length === 1 ? "entry" : "entries"}. This is a mock submission — it exists only in this browser session and won't appear in Discover after a refresh.`}
+        description={`"${createdOrder.title}" was published with ${createdOrder.entries.length} ${createdOrder.entries.length === 1 ? "entry" : "entries"}.`}
         action={
           <>
-            <Button onClick={handleCreateAnother}>Create another</Button>
-            <Button variant="outline" render={<Link href="/discover" />}>
-              Back to Discover
+            <Button render={<Link href={`/reading-orders/${createdOrder.slug}`} />}>
+              View reading order
+            </Button>
+            <Button variant="outline" onClick={handleCreateAnother}>
+              Create another
             </Button>
           </>
         }
       />
     );
   }
+
+  const isSubmitting = form.formState.isSubmitting;
 
   return (
     <FormProvider {...form}>
@@ -87,8 +122,20 @@ export function ReadingOrderForm() {
           <ReadingOrderEntryFieldArray />
         </section>
 
+        {submitError ? (
+          <p role="alert" className="text-sm text-destructive">
+            {submitError}
+          </p>
+        ) : null}
+
         <div className="flex flex-wrap items-center gap-3 border-t border-border pt-6">
-          <Button type="submit">Create reading order</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting
+              ? "Saving…"
+              : mode === "edit"
+                ? "Save changes"
+                : "Create reading order"}
+          </Button>
           <Button
             type="button"
             variant="outline"

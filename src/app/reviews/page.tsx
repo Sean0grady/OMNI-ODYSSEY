@@ -3,7 +3,7 @@ import { PageContainer } from "@/components/layout/page-container";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { ReviewCard } from "@/components/reviews/review-card";
 import { EmptyState } from "@/components/shared/empty-state";
-import { getRecentReviews, getUserById } from "@/lib/repositories";
+import { getRecentReviews } from "@/lib/repositories";
 
 export const metadata: Metadata = {
   title: "Reviews",
@@ -26,13 +26,9 @@ export default function ReviewsPage() {
         <EmptyState title="No reviews yet" />
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {reviews.map((review) => {
-            const author = getUserById(review.authorId);
-            if (!author) {
-              return null;
-            }
-            return <ReviewCard key={review.id} review={review} author={author} />;
-          })}
+          {reviews.map(({ review, author }) => (
+            <ReviewCard key={review.id} review={review} author={author} />
+          ))}
         </div>
       )}
     </PageContainer>

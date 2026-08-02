@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { PageContainer } from "@/components/layout/page-container";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { ReadingOrderForm } from "@/features/reading-orders/components/reading-order-form";
+import { getCurrentUser } from "@/lib/repositories";
 
 export const metadata: Metadata = {
   title: "Create Reading Order",
@@ -9,7 +11,13 @@ export const metadata: Metadata = {
     "Build a custom reading order: add entries, arrange them by drag and drop, and publish publicly or privately.",
 };
 
-export default function CreateReadingOrderPage() {
+export default async function CreateReadingOrderPage() {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    redirect("/onboarding");
+  }
+
   return (
     <PageContainer as="section" className="max-w-3xl space-y-8 py-12">
       <SectionHeading

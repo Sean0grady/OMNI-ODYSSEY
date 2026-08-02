@@ -6,8 +6,11 @@ import { SearchInput } from "@/components/navigation/search-input";
 import { UserMenu } from "@/components/navigation/user-menu";
 import { MobileNav } from "@/components/navigation/mobile-nav";
 import { PRIMARY_NAV_LINKS } from "@/lib/constants/navigation";
+import { getCurrentUser } from "@/lib/repositories";
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const currentUser = await getCurrentUser();
+
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80">
       <PageContainer className="flex h-14 items-center justify-between gap-4">
@@ -43,9 +46,9 @@ export function SiteHeader() {
             Create Reading Order
           </Button>
           <div className="hidden lg:block">
-            <UserMenu />
+            <UserMenu currentUser={currentUser} />
           </div>
-          <MobileNav />
+          <MobileNav currentUser={currentUser} />
         </div>
       </PageContainer>
     </header>
