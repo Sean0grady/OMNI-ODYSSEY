@@ -23,7 +23,7 @@ export async function generateMetadata({
   params,
 }: UserProfilePageProps): Promise<Metadata> {
   const { username } = await params;
-  const user = getUserByUsername(username);
+  const user = await getUserByUsername(username);
 
   if (!user) {
     return { title: "Collector not found" };
@@ -37,13 +37,13 @@ export async function generateMetadata({
 
 export default async function UserProfilePage({ params }: UserProfilePageProps) {
   const { username } = await params;
-  const user = getUserByUsername(username);
+  const user = await getUserByUsername(username);
 
   if (!user) {
     notFound();
   }
 
-  const readingOrders = getReadingOrdersByUserId(user.id);
+  const readingOrders = await getReadingOrdersByUserId(user.id);
   const reviews = getReviewsByUserId(user.id);
 
   return (
@@ -115,8 +115,8 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
           />
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {reviews.map((review) => (
-              <ReviewCard key={review.id} review={review} author={user} />
+            {reviews.map(({ review, author }) => (
+              <ReviewCard key={review.id} review={review} author={author} />
             ))}
           </div>
         )}

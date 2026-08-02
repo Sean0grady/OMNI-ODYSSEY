@@ -13,11 +13,7 @@ import { SectionHeading } from "@/components/shared/section-heading";
 import { ReadingOrderCard } from "@/components/reading-orders/reading-order-card";
 import { ReadingOrderCover } from "@/components/reading-orders/reading-order-cover";
 import { ReviewCard } from "@/components/reviews/review-card";
-import {
-  getFeaturedReadingOrders,
-  getRecentReviews,
-  getUserById,
-} from "@/lib/repositories";
+import { getFeaturedReadingOrders, getRecentReviews } from "@/lib/repositories";
 
 const HOW_IT_WORKS_STEPS = [
   {
@@ -46,10 +42,10 @@ const HOW_IT_WORKS_STEPS = [
   },
 ];
 
-export default function HomePage() {
-  const featuredReadingOrders = getFeaturedReadingOrders(4);
+export default async function HomePage() {
+  const featuredReadingOrders = await getFeaturedReadingOrders(4);
   const recentReviews = getRecentReviews(3);
-  const heroCovers = featuredReadingOrders.slice(0, 3);
+  const heroCovers = featuredReadingOrders.slice(0, 3).map((item) => item.order);
 
   return (
     <>
@@ -125,19 +121,13 @@ export default function HomePage() {
               }
             />
             <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
-              {featuredReadingOrders.map((order) => {
-                const creator = getUserById(order.creatorId);
-                if (!creator) {
-                  return null;
-                }
-                return (
-                  <ReadingOrderCard
-                    key={order.id}
-                    readingOrder={order}
-                    creator={creator}
-                  />
-                );
-              })}
+              {featuredReadingOrders.map(({ order, creator }) => (
+                <ReadingOrderCard
+                  key={order.id}
+                  readingOrder={order}
+                  creator={creator}
+                />
+              ))}
             </div>
           </PageContainer>
         </section>
@@ -185,15 +175,9 @@ export default function HomePage() {
               }
             />
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {recentReviews.map((review) => {
-                const author = getUserById(review.authorId);
-                if (!author) {
-                  return null;
-                }
-                return (
-                  <ReviewCard key={review.id} review={review} author={author} />
-                );
-              })}
+              {recentReviews.map(({ review, author }) => (
+                <ReviewCard key={review.id} review={review} author={author} />
+              ))}
             </div>
           </PageContainer>
         </section>
