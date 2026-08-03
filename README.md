@@ -4,6 +4,8 @@ A community platform for collectors of omnibuses, absolute editions, deluxe hard
 
 This repository now includes a **real backend**: Supabase Auth (email/password) and Postgres back accounts, public collector profiles, and reading orders end to end, with Row Level Security enforcing ownership and visibility. Saves, follows, reviews, comments, collection tracking, image uploads, and OAuth are still frontend-only or mock — see [Current limitations](#current-limitations).
 
+<img src="screenshots\Screenshot 2026-08-02 111625.png">
+
 ## Product overview
 
 Collectors already do the work of figuring out reading orders by hand, and that knowledge is scattered across forum threads, wikis, and blog posts. Omni Odyssey gives it a permanent, structured, browsable home, built specifically around the physical/collected-edition side of comics collecting (so reviews cover binding and paper quality alongside the story, not just star ratings).
