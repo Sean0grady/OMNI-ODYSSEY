@@ -1,46 +1,61 @@
-import { MOCK_REVIEWS, MOCK_USERS } from "@/lib/mock-data";
-import type { CollectedEditionReview, UserProfile } from "@/types/domain";
+import { createClient } from "@/lib/supabase/server";
+import { toEmbeddedCreator } from "@/lib/repositories/reading-orders";
+import type { Database } from "@/types/database.types";
+import type { CollectedEditionReview, Publisher, UserProfile } from "@/types/domain";
 
-/**
- * Reviews are still fully mock-data-backed this phase (out of scope for the
- * Supabase migration). Author resolution stays self-contained here, against
- * MOCK_USERS, rather than going through the real `getUserById` in
- * `users.ts` — real Supabase profile ids are auth UUIDs and will never match
- * a mock review's `authorId` (e.g. "user-marcus"), so mixing the two would
- * silently break every review's author display.
- */
+type ReviewRow = Database["public"]["Tables"]["reviews"]["Row"];
+
 export interface ReviewWithAuthor {
   review: CollectedEditionReview;
   author: UserProfile;
 }
 
-function byCreatedAtDesc(
-  a: CollectedEditionReview,
-  b: CollectedEditionReview
-): number {
-  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+function toReview(row: ReviewRow): CollectedEditionReview {
+  return {
+    id: row.id,
+    authorId: row.author_id,
+    editionTitle: row.edition_title,
+    publisher: row.publisher as Publisher,
+    coverImageUrl: row.cover_image_url,
+    overallRating: row.overall_rating,
+    reviewText: row.review_text,
+    bindingRating: row.binding_rating ?? undefined,
+    paperQualityRating: row.paper_quality_rating ?? undefined,
+    mappingRating: row.mapping_rating ?? undefined,
+    extrasRating: row.extras_rating ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
-function withAuthor(review: CollectedEditionReview): ReviewWithAuthor | null {
-  const author = MOCK_USERS.find((user) => user.id === review.authorId);
-  return author ? { review, author } : null;
+export async function getRecentReviews(limit = 6): Promise<ReviewWithAuthor[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("reviews")
+    .select("*, author:profiles(*)")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  return (data ?? []).flatMap((row) =>
+    row.author
+      ? [{ review: toReview(row), author: toEmbeddedCreator(row.author) }]
+      : []
+  );
 }
 
-export function getRecentReviews(limit = 6): ReviewWithAuthor[] {
-  return [...MOCK_REVIEWS]
-    .sort(byCreatedAtDesc)
-    .slice(0, limit)
-    .flatMap((review) => {
-      const joined = withAuthor(review);
-      return joined ? [joined] : [];
-    });
-}
+export async function getReviewsByUserId(
+  userId: string
+): Promise<ReviewWithAuthor[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("reviews")
+    .select("*, author:profiles(*)")
+    .eq("author_id", userId)
+    .order("created_at", { ascending: false });
 
-export function getReviewsByUserId(userId: string): ReviewWithAuthor[] {
-  return MOCK_REVIEWS.filter((review) => review.authorId === userId)
-    .sort(byCreatedAtDesc)
-    .flatMap((review) => {
-      const joined = withAuthor(review);
-      return joined ? [joined] : [];
-    });
+  return (data ?? []).flatMap((row) =>
+    row.author
+      ? [{ review: toReview(row), author: toEmbeddedCreator(row.author) }]
+      : []
+  );
 }

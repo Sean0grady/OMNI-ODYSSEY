@@ -214,6 +214,62 @@ export type Database = {
           },
         ]
       }
+      reviews: {
+        Row: {
+          author_id: string
+          binding_rating: number | null
+          cover_image_url: string
+          created_at: string
+          edition_title: string
+          extras_rating: number | null
+          id: string
+          mapping_rating: number | null
+          overall_rating: number
+          paper_quality_rating: number | null
+          publisher: string
+          review_text: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          binding_rating?: number | null
+          cover_image_url?: string
+          created_at?: string
+          edition_title: string
+          extras_rating?: number | null
+          id?: string
+          mapping_rating?: number | null
+          overall_rating: number
+          paper_quality_rating?: number | null
+          publisher?: string
+          review_text: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          binding_rating?: number | null
+          cover_image_url?: string
+          created_at?: string
+          edition_title?: string
+          extras_rating?: number | null
+          id?: string
+          mapping_rating?: number | null
+          overall_rating?: number
+          paper_quality_rating?: number | null
+          publisher?: string
+          review_text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_reading_orders: {
         Row: {
           created_at: string

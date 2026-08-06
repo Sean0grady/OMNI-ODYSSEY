@@ -5,9 +5,10 @@ import type { Publisher, UserProfile } from "@/types/domain";
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
 interface ProfileCounts {
+  publishedReadingOrderCount: number;
   followerCount: number;
   followingCount: number;
-  publishedReadingOrderCount: number;
+  reviewCount: number;
 }
 
 function toUserProfile(row: ProfileRow, counts: ProfileCounts): UserProfile {
@@ -21,9 +22,7 @@ function toUserProfile(row: ProfileRow, counts: ProfileCounts): UserProfile {
     favoritePublishers: row.favorite_publishers as Publisher[],
     followerCount: counts.followerCount,
     followingCount: counts.followingCount,
-    // Reviews aren't implemented against Supabase yet — an honest
-    // placeholder, not fake data, until that phase lands.
-    reviewCount: 0,
+    reviewCount: counts.reviewCount,
     publishedReadingOrderCount: counts.publishedReadingOrderCount,
     createdAt: row.created_at,
   };
@@ -66,18 +65,36 @@ async function countFollowing(
   return count ?? 0;
 }
 
+async function countReviews(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<number> {
+  const { count } = await supabase
+    .from("reviews")
+    .select("*", { count: "exact", head: true })
+    .eq("author_id", userId);
+
+  return count ?? 0;
+}
+
 async function getProfileCounts(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string
 ): Promise<ProfileCounts> {
-  const [publishedReadingOrderCount, followerCount, followingCount] =
+  const [publishedReadingOrderCount, followerCount, followingCount, reviewCount] =
     await Promise.all([
       countPublishedReadingOrders(supabase, userId),
       countFollowers(supabase, userId),
       countFollowing(supabase, userId),
+      countReviews(supabase, userId),
     ]);
 
-  return { publishedReadingOrderCount, followerCount, followingCount };
+  return {
+    publishedReadingOrderCount,
+    followerCount,
+    followingCount,
+    reviewCount,
+  };
 }
 
 export async function getUserByUsername(

@@ -4,6 +4,7 @@ import type { Database } from "@/types/database.types";
 
 const PROTECTED_PATHS = [
   "/reading-orders/create",
+  "/reviews/create",
   "/onboarding",
 ] as const;
 

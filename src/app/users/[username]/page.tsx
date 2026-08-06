@@ -50,7 +50,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
 
   const [readingOrders, reviews, isFollowing] = await Promise.all([
     getReadingOrdersByUserId(user.id),
-    Promise.resolve(getReviewsByUserId(user.id)),
+    getReviewsByUserId(user.id),
     isOwnProfile || !currentUser
       ? Promise.resolve(false)
       : getFollowStatus(currentUser.id, user.id),
