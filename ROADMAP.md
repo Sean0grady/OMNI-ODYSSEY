@@ -14,10 +14,10 @@ Zod-validated form (React Hook Form, re-validated server-side) with dynamic entr
 Client-side search, publisher/category filtering, and sort order over the real public reading-order catalog, with a shared filter/sort utility reused by the repository layer.
 
 ### Reading-order detail
-Full metadata display, ordered entries with notes, related reading orders, a mock save button, and owner-only edit/delete controls.
+Full metadata display, ordered entries with notes, related reading orders, a working save button, and owner-only edit/delete controls.
 
 ### Profiles
-Collector bio, stats, published reading orders (including your own private ones on your own profile), recent reviews (still mock), and a mock follow button.
+Collector bio, real stats (reading orders, reviews, followers, following), published reading orders (including your own private ones on your own profile), recent reviews, and a working follow button — hidden when viewing your own profile.
 
 ### Authentication
 Supabase Auth (email/password) via `@supabase/ssr`, with `proxy.ts` (Next.js 16's current session-refresh convention) and `getUser()`-based identity verification everywhere it matters. Sign-up, sign-in, sign-out, and protected-route redirects all working and verified end to end.
@@ -28,18 +28,33 @@ A distinct post-signup step (`/onboarding`) that establishes a public `profiles`
 ### Supabase integration — reading orders
 `reading_orders` and `reading_order_entries` tables with Row Level Security enforcing public/private visibility and strict ownership on every mutation. Full create/read/update/delete implemented via Server Actions, each independently validating the user, the input, and resource ownership. Verified with a live two-account attack test (see `docs/architecture.md`).
 
+### Saves and follows
+`saved_reading_orders` and `follows` tables with RLS, behind Server Actions — replacing the previous client-local `useState` toggles. `reading_orders.save_count` stays in sync via a `security definer` trigger (a saving user has no `UPDATE` grant on someone else's row, so this is the one narrowly-scoped exception), and follower/following counts on profiles are real queries. Verified end to end with two live accounts.
+
+### Reviews
+A real `reviews` table with RLS (public read, owner-only mutate) and a full creation workflow at `/reviews/create`: overall rating plus optional binding, paper-quality, mapping, and extras sub-ratings, via a keyboard-accessible star input. `reviews.ts` now queries Supabase with an embedded author join instead of resolving authors from mock data.
+
+### Cover image and avatar uploads
+Supabase Storage-backed uploads via a shared `ImageUploadField`, replacing the plain pasted-URL fields. A single public `images` bucket, namespaced per user by folder path, with `storage.objects` policies enforcing public read and owner-only writes. Verified against the live project, including that writing into another user's folder is rejected.
+
+### Test suite
+Vitest covering the pure functions in `lib/utilities` and `features/reading-orders/utils/filter-sort.ts`, plus the validation/ownership logic of the reading-order and profile Server Actions, using a shared chainable Supabase fake (`src/test/fake-supabase.ts`).
+
 ## Planned
 
 Listed roughly in dependency order — most of these build on the repository seam already established, per `docs/architecture.md`.
 
-### Save and follow functionality
-Move the `SaveButton`/`FollowButton` local-only toggles behind Server Actions backed by `saved_reading_orders` and `follows` tables, so these actions persist and propagate across pages instead of being client-local UI state.
+### Standardized collected-edition database
+A real `collected_editions` catalog (rather than free-text entry titles) that reading-order entries and reviews can reference by ID, enabling cross-referencing, deduplication, and eventually structured search/filter by edition attributes (binding, publisher imprint, page count, etc.). Several items below depend on this.
 
-### Reviews
-A real `reviews` table + RLS, and a full review-creation workflow (rating a collected edition, writing a review, sub-ratings) — currently mock-data-backed display only, deliberately decoupled from the real `profiles` table (see `docs/architecture.md`).
+### Profile improvements
+Editable profile fields, including changing your avatar after onboarding (uploads work, but there's no edit-profile flow yet), plus follower/following list views on top of the counts that are already real.
 
-### Cover image and avatar uploads
-Supabase Storage-backed uploads, replacing the current plain pasted-URL fields.
+### Saved-orders library and review management
+A per-user "saved reading orders" view, and edit/delete UI for your own reviews — the RLS policies already permit both; only the UI is missing.
+
+### Extend the test suite
+Cover the save/follow, review-creation, and upload Server Actions, reusing `src/test/fake-supabase.ts`. Component/UI-level tests are also still absent.
 
 ### Reading-order detail improvements
 Server-persisted view counts (currently static at creation time), and richer "last updated" surfacing tied to actual edits (the `updated_at` trigger already exists — this is a display/UX layer on top of data that's already correct).
@@ -47,14 +62,11 @@ Server-persisted view counts (currently static at creation time), and richer "la
 ### Discover improvements
 Server-side search once the catalog is too large for client-side filtering to stay fast; pagination; URL-synced filter state (explicitly deferred per the original brief, "do not build complex URL-state synchronization unless it can be implemented cleanly").
 
-### Profile improvements
-Editable profile fields (currently set once at onboarding), real follower/following counts and lists once follows exist, and a per-user "saved reading orders" library view once saves exist.
-
 ### Collection tracking
-Owned / wanted / previously-read status per collected edition, per user — depends on the standardized collected-edition database below.
+Owned / wanted / previously-read status per collected edition, per user — depends on the standardized collected-edition database above.
 
-### Standardized collected-edition database
-A real `collected_editions` catalog (rather than free-text entry titles) that reading-order entries and reviews can reference by ID, enabling cross-referencing, deduplication, and eventually structured search/filter by edition attributes (binding, publisher imprint, page count, etc.).
+### Comments
+Threaded discussion on reading orders and reviews. Not started.
 
-### Test suite
-A test runner (Vitest is a natural fit) covering the pure functions already isolated for this (`lib/utilities`, `features/reading-orders/utils/filter-sort.ts`) plus the Server Actions' validation/ownership logic.
+### OAuth
+Third-party sign-in alongside the existing email/password flow.

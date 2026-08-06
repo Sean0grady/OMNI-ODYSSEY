@@ -23,7 +23,9 @@ The reading-order creation/edit form does **not** reuse `ReadingOrder`/`ReadingO
 
 `src/lib/repositories/{users,reading-orders}.ts` are the only modules that query Supabase directly. Every page and Server Action goes through their exported functions — `getFeaturedReadingOrders()`, `getReadingOrderBySlug(slug)`, `getReadingOrdersByUserId(userId)`, `getRelatedReadingOrders(order)`, `searchReadingOrders(filters)`, `getUserByUsername(username)`, `getUserById(userId)`, `getCurrentUser()` — never a raw Supabase client or table name from outside `lib/repositories`.
 
-**`src/lib/repositories/reviews.ts` is the one exception, deliberately**: reviews are still fully mock-data-backed this phase (out of scope for the Supabase migration). Its `getRecentReviews()`/`getReviewsByUserId(userId)` resolve authors internally from `MOCK_USERS` and return pre-joined `{ review, author }` pairs, rather than going through the real `getUserById`. This isn't a shortcut — it's necessary: real Supabase profile ids are auth UUIDs, and a mock review's `authorId` (e.g. `"user-marcus"`) will never match one. Routing review-author lookups through the real `users.ts` would silently break every review's author display the moment reviews encountered a real user id. `lib/mock-data/{users,reading-orders}.ts` still exist for this reason (and as future seed material) but are otherwise unused by the live repositories.
+`src/lib/repositories/{reviews,saves,follows}.ts` follow the same pattern. `reviews.ts` returns pre-joined `{ review, author }` pairs, resolving the author through PostgREST's embedded `author:profiles(*)` join rather than a per-review `getUserById` call — the same N+1 avoidance the reading-order listing queries use, via the shared `toEmbeddedCreator` mapper. (Reviews were mock-data-backed in an earlier phase, with author resolution deliberately routed through `MOCK_USERS`; that indirection is gone now that review `author_id`s are real auth UUIDs.) `lib/mock-data/*` still exists as future seed material but is no longer read by any repository.
+
+`saves.ts` and `follows.ts` are deliberately thin — `getSaveStatus(readingOrderId, userId)` and `getFollowStatus(followerId, followingId)` each answer one boolean question for the current viewer. Aggregate counts don't live here: follower/following/review counts are computed in `users.ts` alongside the published-reading-order count, so a single profile lookup issues them together in one `Promise.all`.
 
 Each Supabase-backed repository function creates its own fresh, request-scoped client via `lib/supabase/server.ts` — see [Authentication and session handling](#authentication-and-session-handling) for why this matters. Listing functions (`getFeaturedReadingOrders`, `getRecentReadingOrders`, `searchReadingOrders`) fetch creator and entries in one round trip using PostgREST's foreign-key embedding (`select("*, creator:profiles(*), entries:reading_order_entries(*)")`), instead of the N+1 pattern a naive per-item lookup would produce. Single-item lookups (`getReadingOrderBySlug`) embed entries but not creator, since a detail page's separate `getUserById` call is a fixed 1+1 cost either way, not something that scales with a list.
 
@@ -39,7 +41,9 @@ The default is a Server Component. `"use client"` appears only where a component
 | --- | --- |
 | `DiscoverBrowser` | Owns live search/filter/sort state. |
 | `MobileNav`, `UserMenu` | Open/close and menu state (Sheet / DropdownMenu); render different content based on the `currentUser` prop passed down from the Server Component `SiteHeader`. |
-| `SaveButton`, `FollowButton` | Local optimistic toggle state only — saves and follows aren't implemented against Supabase this phase, so these intentionally don't call any repository function; a client-local call would persist nothing a `useState` toggle doesn't already do more cheaply. |
+| `SaveButton`, `FollowButton` | Optimistic toggle state, pending/error state, and a call to their Server Actions. Both receive their initial state (`initialSaved` / `initialFollowing`) from a server-side status lookup, so the first paint is already correct rather than flickering from a default. |
+| `ImageUploadField` | Owns the file input, client-side type/size pre-checks, and upload progress; uploads through the browser Supabase client and hands back a public URL via `onChange`, so it drops into React Hook Form's `Controller` exactly like a text input would. |
+| `RatingInput` | Interactive star control — hover preview state, `role="radiogroup"` semantics, keyboard-operable. |
 | `SignUpForm`, `SignInForm` | Call `supabase.auth.signUp`/`signInWithPassword` directly via the browser client (`lib/supabase/client.ts`) — the standard, secure `@supabase/ssr` pattern. The publishable key is safe in the browser by design; RLS is the real boundary. |
 | `OnboardingForm`, `ReadingOrderForm` and its children (`ReadingOrderMetadataFields`, `ReadingOrderEntryFieldArray`, `ReadingOrderEntryEditor`, `ReadingOrderPreview`) | React Hook Form state, Zod validation, dnd-kit's drag context; submit by calling a Server Action. |
 | `DeleteReadingOrderButton` | Confirm-dialog open state; calls a Server Action on confirm. |
@@ -63,13 +67,18 @@ Onboarding (establishing a public `profiles` row) is a distinct step from sign-u
 
 ## Row Level Security and schema design
 
-Three tables (`supabase/migrations/0001_init.sql`): `profiles` (1:1 with `auth.users`), `reading_orders`, and `reading_order_entries` (owned via the parent order's `creator_id` — entries have no owner column of their own). All three have RLS enabled; there is no code path in this app that disables RLS or uses a service-role/elevated client to bypass it.
+Six tables across four migrations in `supabase/migrations/`: `profiles` (1:1 with `auth.users`), `reading_orders`, `reading_order_entries` (owned via the parent order's `creator_id` — entries have no owner column of their own), `saved_reading_orders`, `follows`, and `reviews`. All have RLS enabled, as does `storage.objects` for the `images` bucket. No code path in this app disables RLS or uses a service-role/elevated client to bypass it.
 
 The policy shape:
 
-- **`profiles`**: publicly readable (`using (true)`); insert/update restricted to `auth.uid() = id`. No delete policy — default-deny, account deletion is out of scope this phase.
+- **`profiles`**: publicly readable (`using (true)`); insert/update restricted to `auth.uid() = id`. No delete policy — default-deny, account deletion is out of scope.
 - **`reading_orders`**: select `using (visibility = 'public' or creator_id = auth.uid())`; insert/update/delete all `creator_id = auth.uid()`.
 - **`reading_order_entries`**: select mirrors the parent's public-or-owner visibility via an `exists (select 1 from reading_orders ro where ro.id = ... and (ro.visibility = 'public' or ro.creator_id = auth.uid()))` check. **Insert/update/delete are ownership-only** (`ro.creator_id = auth.uid()`, no `visibility = 'public'` clause) — this is the single highest-risk line in the schema. Reusing the select expression for mutations would let any authenticated user edit or delete entries on someone else's *public* reading order. This was caught during design review specifically because it's an easy copy-paste mistake, and was verified with a live two-account attack test (below) before being considered done.
+- **`saved_reading_orders`** and **`follows`**: select `using (true)` (counts are public); insert `with check` and delete `using` both keyed to the acting user (`user_id` / `follower_id` `= auth.uid()`). No update policy — a join row is created or destroyed, never edited. `follows` additionally carries a `check (follower_id <> following_id)` so self-follows are impossible at the schema level, not just guarded in the action.
+- **`reviews`**: select `using (true)`; insert/update/delete all `author_id = auth.uid()`.
+- **`storage.objects`** (bucket `images`): select `using (bucket_id = 'images')` — public read; insert/update/delete additionally require `(storage.foldername(name))[1] = auth.uid()::text`, so a user can only write within their own `{uid}/` prefix.
+
+**The one `security definer` function in the schema** is `adjust_reading_order_save_count`, the trigger keeping `reading_orders.save_count` in sync on save/unsave. It has to be `security definer` (with an explicit `set search_path = public`) because the saving user is by definition *not* the reading order's creator, and `reading_orders_update_own` grants `UPDATE` only to the creator — so the increment would otherwise be silently blocked by RLS. Its body touches exactly one column on one row identified by the trigger's own `NEW`/`OLD`, and takes no user input, which is what keeps that elevation narrow.
 
 Every mutating Server Action independently re-verifies ownership on top of RLS (e.g. `updateReadingOrderAction` does its own `select ... where id = X and creator_id = Y` check before writing) rather than relying solely on RLS silently returning zero affected rows — a 0-row update from an RLS denial looks identical to "row doesn't exist" otherwise, and the app wants an explicit, honest "you don't have permission" error instead of an ambiguous silent no-op.
 
@@ -85,14 +94,21 @@ Create, edit, and delete are all Server Actions (`src/features/reading-orders/ac
 
 Entries are fully replaced on every edit (delete-then-reinsert), matching how the entry field array already treats the whole entry list as one unit on submit — this avoids needing per-entry diffing or a deferred uniqueness constraint on `position` to support reordering.
 
+## Image uploads
+
+`ImageUploadField` (`src/components/shared/image-upload-field.tsx`) is the single upload path, shared by reading-order covers and profile avatars. It uploads from the **browser** client rather than through a Server Action: the file would otherwise have to be serialized across the Server Action boundary only to be forwarded to Storage, and the folder-prefix RLS policy already enforces the same ownership rule the server would have checked. Type and size are pre-checked client-side purely as UX (fail fast, clear message) — the bucket's own `allowed_mime_types` and `file_size_limit` are the real constraint, since a client-side check is trivially bypassable.
+
+Uploads are written to `{auth.uid()}/{crypto.randomUUID()}.{ext}`, and the resulting public URL is handed back through `onChange`. That keeps the contract identical to a controlled text input, which is why swapping it in required no schema or Server Action changes: `coverImageUrl`/`avatarUrl` are still just validated URL strings by the time they reach the server.
+
+One consequence worth knowing: **replacing or clearing an image doesn't delete the old object from Storage.** The field only changes which URL the row points at. Orphaned objects accumulate; a cleanup pass (or a delete-on-replace) is future work.
+
 ## What's still not backed by Supabase
 
 | Feature | Current state | What it needs |
 | --- | --- | --- |
-| Reviews | Fully mock-data-backed (`lib/mock-data/reviews.ts`) | A `reviews` table, RLS, and a real creation form (currently display-only even in mock form) |
-| Saves | `SaveButton` is local-only `useState` | `saved_reading_orders` table + Server Action |
-| Follows | `FollowButton` is local-only `useState` | `follows` table + Server Action |
-| Cover images / avatars | Plain pasted URL fields | Supabase Storage + upload UI |
 | Collected-edition catalog | Entries/reviews use free-text titles, no referential integrity between them | A `collected_editions` table both could reference by id |
+| Collection tracking | Not implemented | Depends on the catalog above |
+| Comments | Not implemented | Its own table + RLS |
+| View counts | Static at creation time | A write path that can increment without granting broad `UPDATE` — likely the same `security definer` trigger shape used for `save_count` |
 
 See `README.md`'s "Recommended next development phase" and `ROADMAP.md` for sequencing.
