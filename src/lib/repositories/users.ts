@@ -4,10 +4,12 @@ import type { Publisher, UserProfile } from "@/types/domain";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
-function toUserProfile(
-  row: ProfileRow,
-  publishedReadingOrderCount: number
-): UserProfile {
+interface ProfileCounts {
+  publishedReadingOrderCount: number;
+  reviewCount: number;
+}
+
+function toUserProfile(row: ProfileRow, counts: ProfileCounts): UserProfile {
   return {
     id: row.id,
     username: row.username,
@@ -16,12 +18,12 @@ function toUserProfile(
     avatarUrl: row.avatar_url,
     location: row.location ?? undefined,
     favoritePublishers: row.favorite_publishers as Publisher[],
-    // Follows and reviews aren't implemented against Supabase yet — these
-    // are honest placeholders, not fake data, until those phases land.
+    // Follows aren't implemented against Supabase yet — an honest
+    // placeholder, not fake data, until that phase lands.
     followerCount: 0,
     followingCount: 0,
-    reviewCount: 0,
-    publishedReadingOrderCount,
+    reviewCount: counts.reviewCount,
+    publishedReadingOrderCount: counts.publishedReadingOrderCount,
     createdAt: row.created_at,
   };
 }
@@ -39,6 +41,30 @@ async function countPublishedReadingOrders(
   return count ?? 0;
 }
 
+async function countReviews(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<number> {
+  const { count } = await supabase
+    .from("reviews")
+    .select("*", { count: "exact", head: true })
+    .eq("author_id", userId);
+
+  return count ?? 0;
+}
+
+async function getProfileCounts(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<ProfileCounts> {
+  const [publishedReadingOrderCount, reviewCount] = await Promise.all([
+    countPublishedReadingOrders(supabase, userId),
+    countReviews(supabase, userId),
+  ]);
+
+  return { publishedReadingOrderCount, reviewCount };
+}
+
 export async function getUserByUsername(
   username: string
 ): Promise<UserProfile | undefined> {
@@ -53,12 +79,9 @@ export async function getUserByUsername(
     return undefined;
   }
 
-  const publishedReadingOrderCount = await countPublishedReadingOrders(
-    supabase,
-    profile.id
-  );
+  const counts = await getProfileCounts(supabase, profile.id);
 
-  return toUserProfile(profile, publishedReadingOrderCount);
+  return toUserProfile(profile, counts);
 }
 
 export async function getUserById(
@@ -75,12 +98,9 @@ export async function getUserById(
     return undefined;
   }
 
-  const publishedReadingOrderCount = await countPublishedReadingOrders(
-    supabase,
-    profile.id
-  );
+  const counts = await getProfileCounts(supabase, profile.id);
 
-  return toUserProfile(profile, publishedReadingOrderCount);
+  return toUserProfile(profile, counts);
 }
 
 /**
@@ -107,10 +127,7 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
     return null;
   }
 
-  const publishedReadingOrderCount = await countPublishedReadingOrders(
-    supabase,
-    profile.id
-  );
+  const counts = await getProfileCounts(supabase, profile.id);
 
-  return toUserProfile(profile, publishedReadingOrderCount);
+  return toUserProfile(profile, counts);
 }

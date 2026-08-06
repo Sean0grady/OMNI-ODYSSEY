@@ -43,8 +43,10 @@ const HOW_IT_WORKS_STEPS = [
 ];
 
 export default async function HomePage() {
-  const featuredReadingOrders = await getFeaturedReadingOrders(4);
-  const recentReviews = getRecentReviews(3);
+  const [featuredReadingOrders, recentReviews] = await Promise.all([
+    getFeaturedReadingOrders(4),
+    getRecentReviews(3),
+  ]);
   const heroCovers = featuredReadingOrders.slice(0, 3).map((item) => item.order);
 
   return (

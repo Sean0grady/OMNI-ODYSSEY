@@ -43,8 +43,10 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
     notFound();
   }
 
-  const readingOrders = await getReadingOrdersByUserId(user.id);
-  const reviews = getReviewsByUserId(user.id);
+  const [readingOrders, reviews] = await Promise.all([
+    getReadingOrdersByUserId(user.id),
+    getReviewsByUserId(user.id),
+  ]);
 
   return (
     <PageContainer className="space-y-12 py-12">

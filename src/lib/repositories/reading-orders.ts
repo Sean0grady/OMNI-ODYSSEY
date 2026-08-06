@@ -70,7 +70,7 @@ function toReadingOrder(
  * those counts. Accurate counts only come from getUserByUsername /
  * getUserById / getCurrentUser, which are single-profile lookups.
  */
-function toEmbeddedCreator(row: ProfileRow): UserProfile {
+export function toEmbeddedCreator(row: ProfileRow): UserProfile {
   return {
     id: row.id,
     username: row.username,
