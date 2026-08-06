@@ -89,8 +89,9 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm start` | Serve the production build. |
 | `npm run lint` | Run ESLint. |
 | `npm run typecheck` | Run `tsc --noEmit`. |
+| `npm run test` | Run the Vitest test suite. |
 
-There is no test suite in this phase (see [Current limitations](#current-limitations)). Pure functions in `lib/utilities` and `features/reading-orders/utils/filter-sort.ts` were written to be trivially unit-testable once a runner is added.
+[Vitest](https://vitest.dev) covers the pure functions in `lib/utilities` and `features/reading-orders/utils/filter-sort.ts`, plus the validation/ownership logic of the reading-order and profile Server Actions (mocking the Supabase client via `src/test/fake-supabase.ts`). Not yet covered: Server Actions in feature branches not merged as of this phase (saves/follows, reviews, avatar/cover uploads), and no component/UI-level tests.
 
 ## Project structure
 
@@ -158,7 +159,7 @@ See [docs/architecture.md](docs/architecture.md) for the reasoning behind this s
 - **No image uploads.** Cover image URLs are still just a pasted URL, not a Supabase Storage upload.
 - **No OAuth.** Email/password only, per this phase's scope.
 - **No DB-level enum for `publishers`/`categories`.** Validated by Zod on every write path; a manual database edit could bypass that. Acceptable tradeoff for this phase.
-- **No test suite.** Pure functions are written to be testable once a runner is added.
+- **Test suite is partial.** Vitest covers pure functions and the reading-order/profile Server Actions; no component/UI tests yet, and coverage doesn't extend to work still landing in other feature branches.
 
 See [ISSUES.md](ISSUES.md) for currently-open technical findings and [ROADMAP.md](ROADMAP.md) for what's planned beyond this phase.
 
