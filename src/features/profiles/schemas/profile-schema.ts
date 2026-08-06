@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { PUBLISHERS } from "@/lib/constants/catalog";
 
+const optionalUrl = z
+  .union([z.literal(""), z.string().trim().url("Enter a valid URL")])
+  .optional();
+
 export const createProfileSchema = z.object({
+  avatarUrl: optionalUrl,
   username: z
     .string()
     .trim()
