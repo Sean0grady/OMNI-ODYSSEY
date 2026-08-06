@@ -4,27 +4,7 @@ Real, verified findings only — no filler. Dated to the foundation audit and st
 
 ## Open
 
-### 1. `Button` component's focus-visible ring does not render (needs real-browser confirmation)
-
-**Severity:** Potentially high — if confirmed in a real browser, this affects the visible keyboard-focus indicator on every `Button`-based control in the app (all CTAs, the "Add another entry" / "Remove entry" buttons, the drag handle, form submit buttons, etc.).
-
-**What was found:** Using headless Chromium (via a temporary Playwright verification script, since removed), I confirmed via `getComputedStyle` that:
-- `:focus-visible` correctly matches on `Button`-rendered elements after real keyboard `Tab` navigation (`el.matches(':focus-visible')` returns `true`).
-- The `--ring` CSS custom property resolves to a valid, non-transparent color at the point of query.
-- Despite both of the above, the computed `box-shadow` for the `focus-visible:ring-3 focus-visible:ring-ring/50` utility classes evaluates to fully transparent (`rgba(0, 0, 0, 0)` / `oklab(0 0 0 / 0)` for every layer), and a screenshot of a keyboard-focused `Button` (both a native `<button>` instance and a `render={<Link .../>}` instance) shows no visible ring.
-- By contrast, `Input`'s focus ring — built from the identical `focus-visible:ring-3 focus-visible:ring-ring/50` pattern — renders correctly (confirmed both via computed style and visually), as does at least one `SelectTrigger` instance.
-
-**What this rules out:**
-- Not caused by this stabilization pass — reproduces identically on the desktop header's "Create Reading Order" button (`site-header.tsx`, unmodified in this pass) and on the "Add another entry" button (`reading-order-entry-field-array.tsx`, a plain native `<button>` Button instance, unmodified in this pass).
-- Not a `render`/`nativeButton` composition issue specifically — reproduces on both native-`<button>` and `render={<Link/>}` instances equally.
-- Not a missing/invalid CSS custom property — `--ring` resolves correctly when queried directly.
-- Not a browser `color-mix()` support gap — the headless Chromium build used (151.x) reports full support.
-
-**What's still unknown:** Whether this is a genuine bug in the compiled Tailwind/Base UI CSS, or an artifact specific to headless/automated rendering that doesn't reproduce for a real user in a real browser window. Root cause was not identified within the scope of this pass — it needs manual confirmation in an actual browser (not headless automation) before deciding whether `src/components/ui/button.tsx` or the Tailwind theme needs a fix.
-
-**Where:** `src/components/ui/button.tsx` (all variants), observed via `src/components/layout/site-header.tsx` and `src/features/reading-orders/components/reading-order-entry-field-array.tsx`.
-
-### 2. `Encountered a script tag while rendering React component` console warning on not-found routes (dev mode only)
+### 1. `Encountered a script tag while rendering React component` console warning on not-found routes (dev mode only)
 
 **Severity:** Low. Only observed in `next dev`; does not reproduce in `npm run build` output, and no `<script>` tag exists anywhere in `src/` (verified by search). Most likely a Next.js/Turbopack dev-mode internal behavior on the not-found route boundary, not an app bug. Worth a quick re-check after any Next.js version upgrade, but not blocking. Still present as of the Supabase backend phase — reconfirmed, not reinvestigated.
 
@@ -32,6 +12,10 @@ Real, verified findings only — no filler. Dated to the foundation audit and st
 
 - **Supabase's default shared email sender has a very low rate limit.** During verification, sign-up confirmation emails hit "email rate limit exceeded" after only 2–3 attempts. Fine for this phase (email confirmation is off for local development per the current `.env.local`/dashboard setup), but before any real deployment, configure custom SMTP in the Supabase dashboard (Auth → Settings) — the default sender is not meant for production volume.
 - Supabase's email validator rejects `@example.com`-style addresses as invalid (used for a real, non-deliverable-domain-name check) — not an app-level restriction, just worth knowing when picking test email addresses.
+
+## Resolved — post-Supabase-core backlog
+
+- **`Button` component's focus-visible ring — confirmed a headless-rendering artifact, not a real bug.** The prior entry (headless Chromium via a temporary Playwright script) found the computed `box-shadow` for `focus-visible:ring-3 focus-visible:ring-ring/50` evaluating to fully transparent on `Button` instances, despite `:focus-visible` correctly matching and `--ring` resolving to a valid color. Re-tested in an actual Chrome browser window (via the Chrome DevTools/extension automation, not headless) by tabbing keyboard focus onto three separate `Button` instances — two `render={<Link/>}` instances ("Explore reading orders", "Create a reading order" on the landing page) and one native `<button>` instance (the mobile nav's "Open menu" trigger). All three show a real, non-transparent computed `box-shadow` (a 3px oklab ring layer at 50% opacity) and a visibly rendered amber focus ring in a screenshot. No code change made — `src/components/ui/button.tsx` was already correct; the earlier finding was specific to headless Chromium's rendering pipeline.
 
 ## Resolved — Supabase backend phase
 
