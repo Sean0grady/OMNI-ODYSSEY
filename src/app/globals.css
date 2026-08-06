@@ -7,9 +7,27 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-fraunces);
+  --font-sans: var(--font-archivo);
+  --font-mono: var(--font-archivo);
+  --font-heading: var(--font-archivo);
+  --font-reading: var(--font-zilla);
+
+  /* Certification bands — the grading label's own colour system, used as
+     category and status roles rather than decoration. */
+  --color-universal: var(--universal);
+  --color-universal-foreground: var(--universal-foreground);
+  --color-signature: var(--signature);
+  --color-signature-foreground: var(--signature-foreground);
+  --color-restored: var(--restored);
+  --color-restored-foreground: var(--restored-foreground);
+  --color-qualified: var(--qualified);
+  --color-qualified-foreground: var(--qualified-foreground);
+
+  /* Slab materials */
+  --color-label-stock: var(--label-stock);
+  --color-well: var(--well);
+  --color-acrylic-edge: var(--acrylic-edge);
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,77 +67,133 @@
 }
 
 /*
-  Warm "ink and paper" editorial palette: restrained neutrals with a single
-  burnished-amber accent, evoking foil-stamped hardcovers rather than
-  superhero primary colors.
+  THE SLAB — the grading label and the encapsulated book.
+
+  A reading order is treated the way this hobby treats a certified comic: an
+  object sealed behind acrylic, carrying a printed label, a grade, and a
+  spelled-out breakdown of its physical qualities. Colour is not decorative
+  here; the certification band's colour is what tells a collector *which kind*
+  of certification they are looking at, so those four bands carry the app's
+  category and status roles.
+
+  Light is the default because the use scene is daylight research: someone at a
+  laptop with six tabs open, deciding whether a $100 out-of-print omnibus is
+  worth owning. Dark ships as deep ink navy — the back of the slab — never as
+  black with a neon accent.
 */
 :root {
-  --background: oklch(0.98 0.004 80);
-  --foreground: oklch(0.19 0.012 60);
-  --card: oklch(0.995 0.003 80);
-  --card-foreground: oklch(0.19 0.012 60);
-  --popover: oklch(0.995 0.003 80);
-  --popover-foreground: oklch(0.19 0.012 60);
-  --primary: oklch(0.58 0.135 63);
-  --primary-foreground: oklch(0.99 0.004 80);
-  --secondary: oklch(0.94 0.007 75);
-  --secondary-foreground: oklch(0.24 0.012 60);
-  --muted: oklch(0.955 0.006 75);
-  --muted-foreground: oklch(0.48 0.014 60);
-  --accent: oklch(0.93 0.01 70);
-  --accent-foreground: oklch(0.24 0.012 60);
-  --destructive: oklch(0.55 0.19 25);
-  --border: oklch(0.885 0.009 70);
-  --input: oklch(0.885 0.009 70);
-  --ring: oklch(0.65 0.11 65);
-  --chart-1: oklch(0.58 0.135 63);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.4rem;
-  --sidebar: oklch(0.97 0.005 75);
-  --sidebar-foreground: oklch(0.19 0.012 60);
-  --sidebar-primary: oklch(0.58 0.135 63);
-  --sidebar-primary-foreground: oklch(0.99 0.004 80);
-  --sidebar-accent: oklch(0.93 0.01 70);
-  --sidebar-accent-foreground: oklch(0.24 0.012 60);
-  --sidebar-border: oklch(0.885 0.009 70);
-  --sidebar-ring: oklch(0.65 0.11 65);
+  /* Label stock: a bright, faintly cool printed white. Deliberately not cream. */
+  --background: oklch(0.968 0.006 250);
+  --foreground: oklch(0.23 0.045 258);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.23 0.045 258);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.23 0.045 258);
+
+  /* Universal blue — the default certification band, and the app's primary. */
+  --primary: oklch(0.47 0.163 257);
+  --primary-foreground: oklch(0.99 0.004 250);
+
+  --secondary: oklch(0.925 0.012 252);
+  --secondary-foreground: oklch(0.27 0.05 258);
+  --muted: oklch(0.937 0.009 252);
+  --muted-foreground: oklch(0.46 0.035 256);
+  --accent: oklch(0.9 0.018 252);
+  --accent-foreground: oklch(0.27 0.05 258);
+
+  --destructive: oklch(0.55 0.223 27);
+
+  --border: oklch(0.855 0.016 252);
+  --input: oklch(0.855 0.016 252);
+  --ring: oklch(0.47 0.163 257);
+
+  /* Certification bands */
+  --universal: oklch(0.47 0.163 257);
+  --universal-foreground: oklch(0.99 0.004 250);
+  --signature: oklch(0.84 0.166 88);
+  --signature-foreground: oklch(0.26 0.06 70);
+  --restored: oklch(0.45 0.19 312);
+  --restored-foreground: oklch(0.99 0.004 300);
+  --qualified: oklch(0.53 0.145 155);
+  --qualified-foreground: oklch(0.99 0.004 150);
+
+  /* Slab materials */
+  --label-stock: oklch(0.995 0.003 250);
+  --well: oklch(0.9 0.014 252);
+  --acrylic-edge: oklch(1 0 0 / 70%);
+
+  --chart-1: oklch(0.47 0.163 257);
+  --chart-2: oklch(0.84 0.166 88);
+  --chart-3: oklch(0.45 0.19 312);
+  --chart-4: oklch(0.53 0.145 155);
+  --chart-5: oklch(0.4 0.06 258);
+
+  --radius: 0.25rem;
+
+  --sidebar: oklch(0.945 0.008 252);
+  --sidebar-foreground: oklch(0.23 0.045 258);
+  --sidebar-primary: oklch(0.47 0.163 257);
+  --sidebar-primary-foreground: oklch(0.99 0.004 250);
+  --sidebar-accent: oklch(0.9 0.018 252);
+  --sidebar-accent-foreground: oklch(0.27 0.05 258);
+  --sidebar-border: oklch(0.855 0.016 252);
+  --sidebar-ring: oklch(0.47 0.163 257);
 }
 
 .dark {
-  --background: oklch(0.16 0.011 55);
-  --foreground: oklch(0.95 0.006 75);
-  --card: oklch(0.2 0.012 55);
-  --card-foreground: oklch(0.95 0.006 75);
-  --popover: oklch(0.2 0.012 55);
-  --popover-foreground: oklch(0.95 0.006 75);
-  --primary: oklch(0.74 0.145 66);
-  --primary-foreground: oklch(0.16 0.02 55);
-  --secondary: oklch(0.26 0.012 55);
-  --secondary-foreground: oklch(0.95 0.006 75);
-  --muted: oklch(0.25 0.012 55);
-  --muted-foreground: oklch(0.68 0.014 65);
-  --accent: oklch(0.28 0.014 60);
-  --accent-foreground: oklch(0.95 0.006 75);
-  --destructive: oklch(0.7 0.18 25);
-  --border: oklch(1 0 0 / 11%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.6 0.13 65);
-  --chart-1: oklch(0.74 0.145 66);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.19 0.012 55);
-  --sidebar-foreground: oklch(0.95 0.006 75);
-  --sidebar-primary: oklch(0.74 0.145 66);
-  --sidebar-primary-foreground: oklch(0.16 0.02 55);
-  --sidebar-accent: oklch(0.28 0.014 60);
-  --sidebar-accent-foreground: oklch(0.95 0.006 75);
-  --sidebar-border: oklch(1 0 0 / 11%);
-  --sidebar-ring: oklch(0.6 0.13 65);
+  /* The back of the slab: deep ink navy, never black. */
+  --background: oklch(0.185 0.038 260);
+  --foreground: oklch(0.955 0.008 250);
+
+  --card: oklch(0.232 0.042 259);
+  --card-foreground: oklch(0.955 0.008 250);
+  --popover: oklch(0.232 0.042 259);
+  --popover-foreground: oklch(0.955 0.008 250);
+
+  --primary: oklch(0.68 0.155 252);
+  --primary-foreground: oklch(0.17 0.045 260);
+
+  --secondary: oklch(0.295 0.045 259);
+  --secondary-foreground: oklch(0.955 0.008 250);
+  --muted: oklch(0.278 0.042 259);
+  --muted-foreground: oklch(0.735 0.03 252);
+  --accent: oklch(0.325 0.05 259);
+  --accent-foreground: oklch(0.955 0.008 250);
+
+  --destructive: oklch(0.7 0.19 27);
+
+  --border: oklch(0.99 0.01 250 / 16%);
+  --input: oklch(0.99 0.01 250 / 20%);
+  --ring: oklch(0.68 0.155 252);
+
+  --universal: oklch(0.68 0.155 252);
+  --universal-foreground: oklch(0.17 0.045 260);
+  --signature: oklch(0.86 0.165 88);
+  --signature-foreground: oklch(0.22 0.06 70);
+  --restored: oklch(0.66 0.175 312);
+  --restored-foreground: oklch(0.17 0.05 300);
+  --qualified: oklch(0.7 0.145 155);
+  --qualified-foreground: oklch(0.17 0.04 150);
+
+  --label-stock: oklch(0.955 0.008 250);
+  --well: oklch(0.15 0.035 260);
+  --acrylic-edge: oklch(1 0 0 / 22%);
+
+  --chart-1: oklch(0.68 0.155 252);
+  --chart-2: oklch(0.86 0.165 88);
+  --chart-3: oklch(0.66 0.175 312);
+  --chart-4: oklch(0.7 0.145 155);
+  --chart-5: oklch(0.8 0.03 252);
+
+  --sidebar: oklch(0.21 0.04 260);
+  --sidebar-foreground: oklch(0.955 0.008 250);
+  --sidebar-primary: oklch(0.68 0.155 252);
+  --sidebar-primary-foreground: oklch(0.17 0.045 260);
+  --sidebar-accent: oklch(0.325 0.05 259);
+  --sidebar-accent-foreground: oklch(0.955 0.008 250);
+  --sidebar-border: oklch(0.99 0.01 250 / 16%);
+  --sidebar-ring: oklch(0.68 0.155 252);
 }
 
 @layer base {
@@ -139,5 +213,111 @@
   h5,
   h6 {
     @apply font-heading;
+    font-stretch: 90%;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  /*
+    The label header. Grading labels set their type condensed, in caps, tightly
+    tracked, because the stock is narrow and every field has to fit. That
+    constraint is the look.
+  */
+  .label-type {
+    font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+    font-stretch: 75%;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Attribute rows and any figure a collector compares across books. */
+  .data-type {
+    font-variant-numeric: tabular-nums lining-nums;
+    font-stretch: 88%;
+    letter-spacing: 0.01em;
+  }
+
+  /* The grade. Set as heavy and as wide as the stock allows. */
+  .grade-numeral {
+    font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+    font-weight: 800;
+    font-stretch: 105%;
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.045em;
+    line-height: 0.82;
+  }
+
+  /* Long-form reading: descriptions, review bodies, entry notes. */
+  .reading-type {
+    font-family: var(--font-zilla), ui-serif, Georgia, serif;
+    letter-spacing: 0.002em;
+  }
+
+  /*
+    The encapsulation. A real slab reads as a thick clear shell over an inner
+    well: a bright specular run down one edge, a soft interior shadow where the
+    book sits below the surface, and a hairline where the two halves are sonic
+    welded together.
+  */
+  .slab {
+    position: relative;
+    background:
+      linear-gradient(
+        160deg,
+        var(--acrylic-edge) 0%,
+        transparent 26%,
+        transparent 74%,
+        color-mix(in oklab, var(--acrylic-edge) 55%, transparent) 100%
+      ),
+      var(--card);
+    box-shadow:
+      0 1px 0 0 color-mix(in oklab, var(--acrylic-edge) 90%, transparent) inset,
+      0 18px 38px -18px oklch(0.2 0.05 258 / 38%),
+      0 3px 10px -4px oklch(0.2 0.05 258 / 22%);
+  }
+
+  .dark .slab {
+    box-shadow:
+      0 1px 0 0 color-mix(in oklab, var(--acrylic-edge) 80%, transparent) inset,
+      0 20px 44px -20px oklch(0 0 0 / 62%),
+      0 3px 12px -5px oklch(0 0 0 / 45%);
+  }
+
+  /* The inner well: where the book sits, recessed below the acrylic face. */
+  .slab-well {
+    background: var(--well);
+    box-shadow:
+      0 2px 7px -2px oklch(0.2 0.05 258 / 30%) inset,
+      0 -1px 0 0 color-mix(in oklab, var(--acrylic-edge) 60%, transparent) inset;
+  }
+
+  /*
+    The hologram strip. On a real label this is a narrow foil band that shifts
+    hue with viewing angle; here it is a static conic sweep so it reads as foil
+    without animating on every page.
+  */
+  .foil {
+    background: conic-gradient(
+      from 210deg,
+      oklch(0.78 0.14 252),
+      oklch(0.84 0.14 88),
+      oklch(0.74 0.15 312),
+      oklch(0.78 0.13 155),
+      oklch(0.78 0.14 252)
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

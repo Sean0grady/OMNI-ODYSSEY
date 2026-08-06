@@ -22,7 +22,6 @@ export default async function CreateReadingOrderPage() {
     <PageContainer as="section" className="max-w-3xl space-y-8 py-12">
       <SectionHeading
         headingLevel="h1"
-        eyebrow="Create"
         title="Build a reading order"
         description="Add the collected editions, issues, and story arcs that make up your reading order, then arrange them into the sequence you recommend."
       />

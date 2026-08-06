@@ -1,26 +1,53 @@
 import type { Metadata } from "next";
-import { Fraunces, Geist, Geist_Mono } from "next/font/google";
+import { Archivo, Zilla_Slab } from "next/font/google";
 import { ThemeProvider } from "@/components/shared/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+/**
+ * Archivo carries both a weight and a width axis, which is what lets label
+ * rows condense the way real certification labels do (narrow stock, every
+ * field has to fit) while the grade numeral sets heavy and wide.
+ */
+const archivo = Archivo({
+  variable: "--font-archivo",
   subsets: ["latin"],
+  axes: ["wdth"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+/** Long-form reading only: descriptions, review bodies, entry notes. */
+const zillaSlab = Zilla_Slab({
+  variable: "--font-zilla",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  axes: ["opsz", "SOFT"],
-});
+const DIRECTION_CONTRACT = `<!--
+  THESIS: Every reading order is a graded, certified artifact. Refuses the
+  neutral cover-grid the comics-database category always ships.
+
+  OWN-WORLD: CGC encapsulation and the Overstreet guide. Certification bands —
+  universal blue, signature yellow, restored purple, qualified green — on label
+  stock; deep ink navy for dark, never black. Hard acrylic, recessed well, foil
+  strip, four-colour art. Archivo (weight + width axes) for labels and grades;
+  Zilla Slab for reading.
+
+  STORY: A newcomer sees a route through continuity presented as a certified
+  object with a grade and a spelled-out physical breakdown, trusts it, starts.
+
+  FIRST VIEWPORT: Full-bleed. One oversized angled slab, cover blazing through
+  the acrylic, an enormous overall grade on the label, BINDING / PAPER /
+  MAPPING / EXTRAS ruled beneath it, primary action on the label itself.
+
+  FORM: The Slab — candidate 3 of 7 grounded directions; seed key 615da846.
+
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the
+  finish review, the verdict, and DESIGN.md
+-->`;
 
 export const metadata: Metadata = {
   title: {
@@ -28,7 +55,7 @@ export const metadata: Metadata = {
     template: "%s · Omni Odyssey",
   },
   description:
-    "Build, share, and discover the definitive reading paths through collected comics.",
+    "Certified reading orders through collected comics — graded on binding, paper, mapping, and extras.",
 };
 
 export default function RootLayout({
@@ -40,12 +67,13 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${archivo.variable} ${zillaSlab.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-full flex-col">
+        <div dangerouslySetInnerHTML={{ __html: DIRECTION_CONTRACT }} />
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >

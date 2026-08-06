@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 
 interface SectionHeadingProps {
-  eyebrow?: string;
   title: string;
   description?: string;
   action?: React.ReactNode;
@@ -9,8 +8,12 @@ interface SectionHeadingProps {
   headingLevel?: "h1" | "h2" | "h3";
 }
 
+/**
+ * A price-guide section header: heavy condensed type sitting on a rule, the
+ * way a printed reference divides its sections. The heading carries its own
+ * weight — there is no label above it announcing what it is about to say.
+ */
 export function SectionHeading({
-  eyebrow,
   title,
   description,
   action,
@@ -20,28 +23,28 @@ export function SectionHeading({
   const Heading = headingLevel;
 
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between",
-        className
-      )}
-    >
-      <div className="max-w-2xl">
-        {eyebrow ? (
-          <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
-            {eyebrow}
-          </p>
-        ) : null}
-        <Heading className="mt-1 text-2xl font-medium text-balance sm:text-3xl">
-          {title}
-        </Heading>
-        {description ? (
-          <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-            {description}
-          </p>
-        ) : null}
+    <div className={cn("border-b-2 border-foreground/85 pb-2", className)}>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="max-w-2xl">
+          <Heading
+            className={cn(
+              "font-extrabold text-balance uppercase",
+              headingLevel === "h1"
+                ? "text-3xl sm:text-4xl"
+                : "text-xl sm:text-2xl"
+            )}
+            style={{ fontStretch: "82%", letterSpacing: "-0.015em" }}
+          >
+            {title}
+          </Heading>
+          {description ? (
+            <p className="reading-type mt-1.5 max-w-prose text-sm text-muted-foreground">
+              {description}
+            </p>
+          ) : null}
+        </div>
+        {action ? <div className="shrink-0">{action}</div> : null}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }

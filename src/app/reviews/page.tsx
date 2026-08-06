@@ -22,7 +22,6 @@ export default async function ReviewsPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <SectionHeading
           headingLevel="h1"
-          eyebrow="Reviews"
           title="Collected-edition reviews"
           description="Notes from collectors on binding, paper quality, mapping inserts, and extras — not just the story inside."
         />

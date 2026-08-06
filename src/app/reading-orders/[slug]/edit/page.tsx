@@ -56,7 +56,6 @@ export default async function EditReadingOrderPage({
     <PageContainer as="section" className="max-w-3xl space-y-8 py-12">
       <SectionHeading
         headingLevel="h1"
-        eyebrow="Edit"
         title={`Edit "${readingOrder.title}"`}
         description="Update the details or entries in this reading order."
       />

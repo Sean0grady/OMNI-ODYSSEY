@@ -22,7 +22,6 @@ export default async function DiscoverPage({ searchParams }: DiscoverPageProps) 
     <PageContainer as="section" className="space-y-8 py-12">
       <SectionHeading
         headingLevel="h1"
-        eyebrow="Discover"
         title="Discover reading orders"
         description="Search and filter reading orders published by collectors across every publisher and category."
       />

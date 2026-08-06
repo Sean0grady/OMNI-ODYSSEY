@@ -17,7 +17,6 @@ export default function AboutPage() {
     <PageContainer as="section" className="space-y-12 py-12">
       <SectionHeading
         headingLevel="h1"
-        eyebrow="About"
         title="Continuity is the hard part"
         description="Omni Odyssey exists to solve one specific problem: figuring out what to actually read, and in what order, once you decide to collect a character, creator, or event in omnibus or deluxe form."
       />

@@ -1,44 +1,65 @@
 import Link from "next/link";
-import {
-  BookMarked,
-  Compass,
-  ListOrdered,
-  PlusCircle,
-  Share2,
-  Users,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/page-container";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { ReadingOrderCard } from "@/components/reading-orders/reading-order-card";
-import { ReadingOrderCover } from "@/components/reading-orders/reading-order-cover";
+import { CoverPlaceholder } from "@/components/reading-orders/cover-placeholder";
 import { ReviewCard } from "@/components/reviews/review-card";
+import {
+  Slab,
+  SlabLabel,
+  SlabAttributes,
+  SlabWell,
+  SlabCertNumber,
+} from "@/components/slab/slab";
 import { getFeaturedReadingOrders, getRecentReviews } from "@/lib/repositories";
 
-const HOW_IT_WORKS_STEPS = [
+/**
+ * SAMPLE RECORD — authored demonstration content.
+ *
+ * The live catalogue is thin, and a landing page that shows nothing
+ * demonstrates nothing. This is a real, existing collected edition graded the
+ * way the product grades one, marked as a sample wherever it appears. Replace
+ * it with a real certified record once the catalogue carries one.
+ */
+const SAMPLE = {
+  id: "sample-ff-hickman-v1",
+  edition: "Fantastic Four by Jonathan Hickman Omnibus, Vol. 1",
+  publisher: "Marvel",
+  year: "2013",
+  grader: "marcus.reads",
+  grade: "9.4",
+  designation: "Near Mint",
+  attributes: [
+    { label: "Binding", value: "9.5", fill: 0.95 },
+    { label: "Paper", value: "9.0", fill: 0.9 },
+    { label: "Mapping", value: "8.5", fill: 0.85 },
+    { label: "Extras", value: "9.5", fill: 0.95 },
+  ],
+};
+
+/** What each graded attribute actually means, in the product's own language. */
+const GRADE_KEY = [
   {
-    icon: Compass,
-    title: "Find your entry point",
-    description:
-      "Browse reading orders built around a character, creator, event, or era — filtered by publisher and category until you find the right one.",
+    term: "Binding",
+    reading:
+      "Sewn or glued, and whether the block holds when the spine is opened flat. The single thing that decides whether a heavy omnibus survives a first read.",
   },
   {
-    icon: ListOrdered,
-    title: "Follow a mapped sequence",
-    description:
-      "Each order lists collected editions and story arcs in a deliberate sequence, with notes on optional detours and where they rejoin the main path.",
+    term: "Paper",
+    reading:
+      "Stock weight, coating, and how much ink shows through from the reverse. Matte or gloss changes how the original colour separations read.",
   },
   {
-    icon: BookMarked,
-    title: "Track your own shelf",
-    description:
-      "Save orders you're following, and keep tabs on what you own, want, and have already read as you work through the stack.",
+    term: "Mapping",
+    reading:
+      "How much art disappears into the gutter. On an oversized edition this is the difference between a page you can read and a page you fight.",
   },
   {
-    icon: Share2,
-    title: "Publish your own path",
-    description:
-      "Built a better sequence than what's out there? Assemble your own reading order and share it publicly, or keep it private for your own reference.",
+    term: "Extras",
+    reading:
+      "Scripts, process pages, cover galleries, letters pages. What you get beyond the run itself, and whether it justifies the shelf space.",
   },
 ];
 
@@ -47,65 +68,124 @@ export default async function HomePage() {
     getFeaturedReadingOrders(4),
     getRecentReviews(3),
   ]);
-  const heroCovers = featuredReadingOrders.slice(0, 3).map((item) => item.order);
 
   return (
     <>
-      <section className="overflow-hidden border-b border-border">
-        <PageContainer className="grid grid-cols-1 items-center gap-10 py-16 sm:py-20 lg:grid-cols-2 lg:py-28">
-          <div className="max-w-xl space-y-6">
-            <p className="text-xs font-medium tracking-[0.14em] text-primary uppercase">
-              For collectors, by collectors
-            </p>
-            <h1 className="font-heading text-4xl leading-[1.05] font-medium text-balance sm:text-5xl">
-              Build, share, and discover the definitive reading paths through
-              collected comics.
+      {/*
+        The first viewport is the thesis: a route through continuity presented
+        as a certified object. The blue owns the whole field rather than
+        appearing as an accent on a neutral ground.
+      */}
+      <section className="bg-universal text-universal-foreground">
+        <PageContainer className="grid grid-cols-1 items-center gap-12 py-16 sm:py-20 lg:grid-cols-[1.05fr_minmax(0,0.95fr)] lg:py-24">
+          <div className="max-w-xl">
+            <h1
+              className="text-[2.6rem] leading-[0.92] font-extrabold text-balance uppercase sm:text-6xl"
+              style={{ fontStretch: "84%", letterSpacing: "-0.03em" }}
+            >
+              Know what to read,
+              <br />
+              and what to buy.
             </h1>
-            <p className="text-base text-muted-foreground sm:text-lg">
-              Omni Odyssey is where collectors map complicated continuity —
-              omnibuses, absolute editions, deluxe manga volumes, and
-              compendiums — into reading orders other people can actually
-              follow.
+            <p className="reading-type mt-5 max-w-md text-base leading-relaxed text-universal-foreground/85 sm:text-lg">
+              Collectors map complicated continuity into ordered routes through
+              collected editions, then grade the books themselves on binding,
+              paper, mapping, and extras. Not just whether the story is good —
+              whether the object is worth owning.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Button size="lg" render={<Link href="/discover" />}>
-                Explore reading orders
-              </Button>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3">
               <Button
                 size="lg"
-                variant="outline"
-                render={<Link href="/reading-orders/create" />}
+                variant="secondary"
+                render={<Link href="/discover" />}
               >
-                <PlusCircle aria-hidden="true" />
-                Create a reading order
+                Browse reading orders
+                <ArrowRight aria-hidden="true" />
               </Button>
+              <Link
+                href="/reading-orders/create"
+                className="label-type rounded-[2px] px-1 py-1 text-xs underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-universal-foreground/50"
+              >
+                Publish your own route
+              </Link>
             </div>
           </div>
 
-          {heroCovers.length > 0 ? (
-            <div className="relative hidden h-80 lg:block">
-              {heroCovers.map((order, index) => (
-                <div
-                  key={order.id}
-                  className="absolute top-0 w-44"
-                  style={{
-                    left: `${index * 88}px`,
-                    transform: `rotate(${(index - 1) * 4}deg)`,
-                    zIndex: heroCovers.length - index,
-                  }}
+          {/* The hero slab, tilted the way one sits when you hold it up. */}
+          <div className="mx-auto w-full max-w-sm lg:max-w-md">
+            <Slab className="rotate-[-1.4deg]">
+              <SlabLabel
+                band="universal"
+                bandLabel="Universal · Sample record"
+                meta={`${SAMPLE.publisher} · ${SAMPLE.year}`}
+                title={
+                  <p
+                    className="text-base leading-[1.1] font-extrabold text-balance uppercase"
+                    style={{ fontStretch: "86%", letterSpacing: "-0.015em" }}
+                  >
+                    {SAMPLE.edition}
+                  </p>
+                }
+                byline={
+                  <p className="label-type text-[0.55rem] text-muted-foreground">
+                    Graded by {SAMPLE.grader}
+                  </p>
+                }
+                grade={{
+                  value: SAMPLE.grade,
+                  designation: SAMPLE.designation,
+                  srLabel: `Overall grade ${SAMPLE.grade} out of 10, ${SAMPLE.designation}`,
+                }}
+              />
+
+              <SlabAttributes
+                attributes={SAMPLE.attributes}
+                className="bg-label-stock"
+              />
+              <SlabCertNumber
+                id={SAMPLE.id}
+                className="border-t border-foreground/12"
+              />
+
+              {/* The book dominates the well, the way it does in a real slab. */}
+              <SlabWell className="px-6 py-5">
+                <CoverPlaceholder title={SAMPLE.edition} seed={SAMPLE.id} />
+              </SlabWell>
+            </Slab>
+
+            <p className="label-type mt-3 text-center text-[0.55rem] text-universal-foreground/70">
+              Sample record — illustrative, not a real certification
+            </p>
+          </div>
+        </PageContainer>
+      </section>
+
+      {/*
+        The differentiator, explained the way a guide explains its own
+        notation. Deliberately a definition list, not a row of icon cards.
+      */}
+      <section className="border-b border-border py-16">
+        <PageContainer className="space-y-8">
+          <SectionHeading
+            title="What the grade covers"
+            description="Every review rates the physical object alongside the story, because a $100 out-of-print book is a purchase before it is a read."
+          />
+          <dl className="grid grid-cols-1 gap-x-12 gap-y-7 sm:grid-cols-2">
+            {GRADE_KEY.map((entry) => (
+              <div key={entry.term} className="border-t border-foreground/15 pt-4">
+                <dt
+                  className="text-lg font-extrabold uppercase"
+                  style={{ fontStretch: "82%", letterSpacing: "-0.01em" }}
                 >
-                  <ReadingOrderCover
-                    title={order.title}
-                    seed={order.id}
-                    publisher={order.publishers[0]}
-                    imageUrl={order.coverImageUrl || undefined}
-                    className="shadow-xl"
-                    priority={index === 0}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : null}
+                  {entry.term}
+                </dt>
+                <dd className="reading-type mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  {entry.reading}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </PageContainer>
       </section>
 
@@ -113,11 +193,10 @@ export default async function HomePage() {
         <section className="border-b border-border py-16">
           <PageContainer className="space-y-8">
             <SectionHeading
-              eyebrow="Featured"
-              title="Featured reading orders"
-              description="Well-saved orders from collectors mapping out dense runs and long-running continuity."
+              title="Certified routes"
+              description="Reading orders other collectors have published and saved."
               action={
-                <Button variant="ghost" render={<Link href="/discover" />}>
+                <Button variant="outline" render={<Link href="/discover" />}>
                   Browse all
                 </Button>
               }
@@ -135,44 +214,15 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      <section className="border-b border-border bg-muted/40 py-16">
-        <PageContainer className="space-y-10">
-          <SectionHeading
-            eyebrow="How it works"
-            title="A better way to navigate continuity"
-            description="Reading orders exist to answer one question: what do I read, and in what order, to get the story right?"
-          />
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {HOW_IT_WORKS_STEPS.map((step, index) => (
-              <div key={step.title} className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <step.icon className="size-4" aria-hidden="true" />
-                  </span>
-                  <span className="font-heading text-sm text-muted-foreground">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                </div>
-                <p className="font-heading font-medium">{step.title}</p>
-                <p className="text-sm text-muted-foreground">
-                  {step.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </PageContainer>
-      </section>
-
       {recentReviews.length > 0 ? (
         <section className="border-b border-border py-16">
           <PageContainer className="space-y-8">
             <SectionHeading
-              eyebrow="From the community"
-              title="Recent collector reviews"
-              description="Notes on binding, paper quality, and presentation from collectors evaluating the physical editions themselves."
+              title="Recent grading notes"
+              description="What collectors found when the book actually arrived."
               action={
-                <Button variant="ghost" render={<Link href="/reviews" />}>
-                  Browse all reviews
+                <Button variant="outline" render={<Link href="/reviews" />}>
+                  All reviews
                 </Button>
               }
             />
@@ -185,27 +235,25 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      <section className="py-16">
-        <PageContainer>
-          <div className="flex flex-col items-center gap-4 rounded-lg border border-border bg-card px-6 py-14 text-center">
-            <Users className="size-8 text-primary" aria-hidden="true" />
-            <h2 className="font-heading max-w-lg text-2xl font-medium text-balance sm:text-3xl">
-              Your shelf has a story. Help other collectors read it in order.
+      {/* The close: a real anchor, drenched the way the opening is. */}
+      <section className="bg-foreground py-20 text-background">
+        <PageContainer className="flex flex-col items-start gap-8 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-lg">
+            <h2
+              className="text-3xl leading-[0.95] font-extrabold text-balance uppercase sm:text-4xl"
+              style={{ fontStretch: "84%", letterSpacing: "-0.025em" }}
+            >
+              You already worked it out. Write it down.
             </h2>
-            <p className="max-w-md text-sm text-muted-foreground">
-              Publish the reading order you wish existed when you started, or
-              save one from another collector to work through at your own
-              pace.
+            <p className="reading-type mt-4 text-sm leading-relaxed text-background/80 sm:text-base">
+              The order you pieced together from six forum threads is worth more
+              than the forum threads. Publish it once and it stops decaying.
             </p>
-            <div className="flex flex-wrap justify-center gap-3 pt-2">
-              <Button render={<Link href="/reading-orders/create" />}>
-                Create a reading order
-              </Button>
-              <Button variant="outline" render={<Link href="/discover" />}>
-                Discover reading orders
-              </Button>
-            </div>
           </div>
+          <Button size="lg" render={<Link href="/reading-orders/create" />}>
+            Publish a reading order
+            <ArrowRight aria-hidden="true" />
+          </Button>
         </PageContainer>
       </section>
     </>
