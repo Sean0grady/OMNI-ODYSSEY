@@ -17,6 +17,7 @@ import {
   getRelatedReadingOrders,
   getUserById,
   getCurrentUser,
+  getSaveStatus,
 } from "@/lib/repositories";
 
 interface ReadingOrderDetailPageProps {
@@ -59,7 +60,12 @@ export default async function ReadingOrderDetailPage({
   }
 
   const isOwner = currentUser?.id === readingOrder.creatorId;
-  const relatedReadingOrders = await getRelatedReadingOrders(readingOrder);
+  const [relatedReadingOrders, isSaved] = await Promise.all([
+    getRelatedReadingOrders(readingOrder),
+    currentUser
+      ? getSaveStatus(readingOrder.id, currentUser.id)
+      : Promise.resolve(false),
+  ]);
 
   return (
     <PageContainer as="article" className="space-y-12 py-12">
@@ -89,7 +95,12 @@ export default async function ReadingOrderDetailPage({
           <ReadingOrderMetadata readingOrder={readingOrder} />
 
           <div className="flex flex-wrap items-center gap-2">
-            <SaveButton initialSaveCount={readingOrder.saveCount} />
+            <SaveButton
+              readingOrderId={readingOrder.id}
+              slug={readingOrder.slug}
+              initialSaved={isSaved}
+              initialSaveCount={readingOrder.saveCount}
+            />
             {isOwner ? (
               <>
                 <Button

@@ -13,6 +13,8 @@ import {
   getReadingOrdersByUserId,
   getReviewsByUserId,
   getUserByUsername,
+  getCurrentUser,
+  getFollowStatus,
 } from "@/lib/repositories";
 
 interface UserProfilePageProps {
@@ -43,8 +45,16 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
     notFound();
   }
 
-  const readingOrders = await getReadingOrdersByUserId(user.id);
-  const reviews = getReviewsByUserId(user.id);
+  const currentUser = await getCurrentUser();
+  const isOwnProfile = currentUser?.id === user.id;
+
+  const [readingOrders, reviews, isFollowing] = await Promise.all([
+    getReadingOrdersByUserId(user.id),
+    Promise.resolve(getReviewsByUserId(user.id)),
+    isOwnProfile || !currentUser
+      ? Promise.resolve(false)
+      : getFollowStatus(currentUser.id, user.id),
+  ]);
 
   return (
     <PageContainer className="space-y-12 py-12">
@@ -81,7 +91,14 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
             </div>
           </div>
         </div>
-        <FollowButton className="shrink-0" />
+        {isOwnProfile ? null : (
+          <FollowButton
+            targetUserId={user.id}
+            targetUsername={user.username}
+            initialFollowing={isFollowing}
+            className="shrink-0"
+          />
+        )}
       </div>
 
       <CollectorStatistics user={user} />

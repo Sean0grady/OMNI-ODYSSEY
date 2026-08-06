@@ -8,3 +8,5 @@ export {
 } from "./reading-orders";
 export { getUserByUsername, getUserById, getCurrentUser } from "./users";
 export { getRecentReviews, getReviewsByUserId } from "./reviews";
+export { getSaveStatus } from "./saves";
+export { getFollowStatus } from "./follows";
