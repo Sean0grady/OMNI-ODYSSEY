@@ -39,6 +39,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_following_id_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string
@@ -172,6 +208,98 @@ export type Database = {
           {
             foreignKeyName: "reading_orders_creator_id_fkey"
             columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          author_id: string
+          binding_rating: number | null
+          cover_image_url: string
+          created_at: string
+          edition_title: string
+          extras_rating: number | null
+          id: string
+          mapping_rating: number | null
+          overall_rating: number
+          paper_quality_rating: number | null
+          publisher: string
+          review_text: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          binding_rating?: number | null
+          cover_image_url?: string
+          created_at?: string
+          edition_title: string
+          extras_rating?: number | null
+          id?: string
+          mapping_rating?: number | null
+          overall_rating: number
+          paper_quality_rating?: number | null
+          publisher?: string
+          review_text: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          binding_rating?: number | null
+          cover_image_url?: string
+          created_at?: string
+          edition_title?: string
+          extras_rating?: number | null
+          id?: string
+          mapping_rating?: number | null
+          overall_rating?: number
+          paper_quality_rating?: number | null
+          publisher?: string
+          review_text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_reading_orders: {
+        Row: {
+          created_at: string
+          id: string
+          reading_order_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reading_order_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reading_order_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_reading_orders_reading_order_id_fkey"
+            columns: ["reading_order_id"]
+            isOneToOne: false
+            referencedRelation: "reading_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_reading_orders_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

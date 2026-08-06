@@ -37,13 +37,15 @@ export async function createProfileAction(
     return { success: false, error: "Please fix the errors below.", fieldErrors };
   }
 
-  const { username, displayName, bio, location, favoritePublishers } = parsed.data;
+  const { avatarUrl, username, displayName, bio, location, favoritePublishers } =
+    parsed.data;
 
   const { error: insertError } = await supabase.from("profiles").insert({
     id: user.id,
     username,
     display_name: displayName,
     bio: bio || "",
+    avatar_url: avatarUrl || "",
     location: location || null,
     favorite_publishers: favoritePublishers,
   });

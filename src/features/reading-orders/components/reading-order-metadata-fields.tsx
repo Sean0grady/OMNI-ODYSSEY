@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FormFieldError } from "@/components/forms/form-field-error";
+import { ImageUploadField } from "@/components/shared/image-upload-field";
 import {
   PUBLISHERS,
   PUBLISHER_LABELS,
@@ -50,23 +51,19 @@ export function ReadingOrderMetadataFields() {
         <FormFieldError id="summary-error" message={errors.summary?.message} />
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="coverImageUrl">Cover image URL (optional)</Label>
-        <Input
-          id="coverImageUrl"
-          type="url"
-          aria-invalid={!!errors.coverImageUrl}
-          aria-describedby={
-            errors.coverImageUrl ? "coverImageUrl-error" : undefined
-          }
-          placeholder="https://…"
-          {...register("coverImageUrl")}
-        />
-        <FormFieldError
-          id="coverImageUrl-error"
-          message={errors.coverImageUrl?.message}
-        />
-      </div>
+      <Controller
+        control={control}
+        name="coverImageUrl"
+        render={({ field }) => (
+          <ImageUploadField
+            id="coverImageUrl"
+            label="Cover image (optional)"
+            value={field.value ?? ""}
+            onChange={field.onChange}
+            errorMessage={errors.coverImageUrl?.message}
+          />
+        )}
+      />
 
       <fieldset
         className="space-y-2"

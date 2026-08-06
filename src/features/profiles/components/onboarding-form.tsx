@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormFieldError } from "@/components/forms/form-field-error";
+import { ImageUploadField } from "@/components/shared/image-upload-field";
 import { PUBLISHERS, PUBLISHER_LABELS } from "@/lib/constants/catalog";
 import {
   createProfileSchema,
@@ -38,6 +39,7 @@ export function OnboardingForm() {
   } = useForm<CreateProfileInput>({
     resolver: zodResolver(createProfileSchema),
     defaultValues: {
+      avatarUrl: "",
       username: "",
       displayName: "",
       bio: "",
@@ -66,6 +68,20 @@ export function OnboardingForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
+      <Controller
+        control={control}
+        name="avatarUrl"
+        render={({ field }) => (
+          <ImageUploadField
+            id="avatarUrl"
+            label="Avatar (optional)"
+            value={field.value ?? ""}
+            onChange={field.onChange}
+            errorMessage={errors.avatarUrl?.message}
+          />
+        )}
+      />
+
       <div className="space-y-1.5">
         <Label htmlFor="username">Username</Label>
         <Input
