@@ -68,16 +68,24 @@ The token layer already propagates site-wide, so every route reads in the new
 palette and type, but only the landing page has been recomposed into the slab
 vocabulary. Remaining, on branch `redesign/the-slab`:
 
-- **App surfaces still in their old composition:** `/discover` (intended as the
-  census/price-guide listing), reading-order detail (the opened slab with the
-  entries as a numbered run), profile (the Registry Set), `/reviews` and
-  `/reviews/create`, the reading-order create/edit forms, the auth and
-  onboarding pages, and the not-found pages.
-- **Site chrome untouched:** `SiteHeader` and `SiteFooter` are still the
-  incumbent design, including the search field and the account menu.
-- **Empty states** need rebuilding in-world ("not yet submitted" rather than a
-  blank), which matters disproportionately because the catalogue is thin —
-  see the "Design for empty" product principle.
+**Done since:** site chrome (`SiteHeader` as a grading masthead, `SiteFooter` as
+an indicia — whose disclaimer was also factually stale and now describes the
+real backend); `ReadingOrderCard` as a compact slab; `EmptyState` as an
+unfilled registry slot; `Button`, `Badge`, and `Input` in the label vocabulary;
+`constants/bands` mapping categories to certification bands; and the
+reading-order detail page as the opened record with the run set as numbered
+plates.
+
+- **App surfaces still in their old composition:** profile (intended as the
+  Registry Set), `/reviews` and `/reviews/create`, the reading-order
+  create/edit forms, the auth and onboarding pages, and the not-found pages.
+  `/discover` inherits the new card and chrome but its filter rail is not yet
+  the census/price-guide listing it should be.
+- **Remaining stock primitives:** `Select`, `Textarea`, `Checkbox`,
+  `RadioGroup`, `Dialog`, and `Tabs` are still shadcn defaults, which reads as
+  a lapse inside a committed world.
+- **`RatingDisplay` / `RatingInput`** still use stars; in this world they
+  should print as grades on the 10-point scale the labels use.
 - **Seed demo content:** real collected editions, authored at full fidelity and
   labeled synthetic. Only the single hero sample record exists so far.
 - **Responsive:** mobile has not been checked at all yet. Committed directions
