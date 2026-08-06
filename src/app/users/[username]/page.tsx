@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { MapPin } from "lucide-react";
+import Link from "next/link";
+import { Bookmark, MapPin } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
 import { CollectorAvatar } from "@/components/shared/collector-avatar";
 import { CollectorStatistics } from "@/components/profiles/collector-statistics";
@@ -9,12 +10,14 @@ import { PublisherBadge } from "@/components/reading-orders/publisher-badge";
 import { ReadingOrderCard } from "@/components/reading-orders/reading-order-card";
 import { ReviewCard } from "@/components/reviews/review-card";
 import { EmptyState } from "@/components/shared/empty-state";
+import { Button } from "@/components/ui/button";
 import {
   getReadingOrdersByUserId,
   getReviewsByUserId,
   getUserByUsername,
   getCurrentUser,
   getFollowStatus,
+  getSavedReadingOrders,
 } from "@/lib/repositories";
 
 interface UserProfilePageProps {
@@ -48,13 +51,17 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
   const currentUser = await getCurrentUser();
   const isOwnProfile = currentUser?.id === user.id;
 
-  const [readingOrders, reviews, isFollowing] = await Promise.all([
-    getReadingOrdersByUserId(user.id),
-    getReviewsByUserId(user.id),
-    isOwnProfile || !currentUser
-      ? Promise.resolve(false)
-      : getFollowStatus(currentUser.id, user.id),
-  ]);
+  const [readingOrders, reviews, isFollowing, savedReadingOrders] =
+    await Promise.all([
+      getReadingOrdersByUserId(user.id),
+      getReviewsByUserId(user.id),
+      isOwnProfile || !currentUser
+        ? Promise.resolve(false)
+        : getFollowStatus(currentUser.id, user.id),
+      // Saved orders are shown on your own profile only, so don't pay for
+      // the query when viewing someone else's.
+      isOwnProfile ? getSavedReadingOrders(user.id) : Promise.resolve([]),
+    ]);
 
   return (
     <PageContainer className="space-y-12 py-12">
@@ -120,6 +127,41 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
           </div>
         )}
       </section>
+
+      {isOwnProfile ? (
+        <section aria-labelledby="saved-heading" className="space-y-4">
+          <div className="space-y-1">
+            <h2 id="saved-heading" className="font-heading text-xl font-medium">
+              Saved reading orders
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Only you can see what you&apos;ve saved.
+            </p>
+          </div>
+          {savedReadingOrders.length === 0 ? (
+            <EmptyState
+              icon={Bookmark}
+              title="Nothing saved yet"
+              description="Save a reading order to keep it here for later."
+              action={
+                <Button variant="outline" render={<Link href="/discover" />}>
+                  Browse reading orders
+                </Button>
+              }
+            />
+          ) : (
+            <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
+              {savedReadingOrders.map(({ order, creator }) => (
+                <ReadingOrderCard
+                  key={order.id}
+                  readingOrder={order}
+                  creator={creator}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
 
       <section aria-labelledby="reviews-heading" className="space-y-4">
         <h2 id="reviews-heading" className="font-heading text-xl font-medium">

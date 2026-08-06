@@ -31,6 +31,9 @@ A distinct post-signup step (`/onboarding`) that establishes a public `profiles`
 ### Saves and follows
 `saved_reading_orders` and `follows` tables with RLS, behind Server Actions — replacing the previous client-local `useState` toggles. `reading_orders.save_count` stays in sync via a `security definer` trigger (a saving user has no `UPDATE` grant on someone else's row, so this is the one narrowly-scoped exception), and follower/following counts on profiles are real queries. Verified end to end with two live accounts.
 
+### Saved reading orders on your profile
+A "Saved reading orders" section on the profile page, rendered only when you're viewing your own profile — the underlying rows are world-readable, so this is a deliberate product choice rather than something RLS enforces. Orders the viewer may no longer see (someone else's, since made private) are dropped rather than rendered as blanks.
+
 ### Reviews
 A real `reviews` table with RLS (public read, owner-only mutate) and a full creation workflow at `/reviews/create`: overall rating plus optional binding, paper-quality, mapping, and extras sub-ratings, via a keyboard-accessible star input. `reviews.ts` now queries Supabase with an embedded author join instead of resolving authors from mock data.
 
@@ -50,8 +53,8 @@ A real `collected_editions` catalog (rather than free-text entry titles) that re
 ### Profile improvements
 Editable profile fields, including changing your avatar after onboarding (uploads work, but there's no edit-profile flow yet), plus follower/following list views on top of the counts that are already real.
 
-### Saved-orders library and review management
-A per-user "saved reading orders" view, and edit/delete UI for your own reviews — the RLS policies already permit both; only the UI is missing.
+### Review management
+Edit/delete UI for your own reviews — the RLS policies already permit both; only the UI is missing.
 
 ### Extend the test suite
 Cover the save/follow, review-creation, and upload Server Actions, reusing `src/test/fake-supabase.ts`. Component/UI-level tests are also still absent.

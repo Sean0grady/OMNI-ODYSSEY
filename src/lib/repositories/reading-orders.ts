@@ -33,7 +33,7 @@ function toReadingOrderEntry(row: ReadingOrderEntryRow): ReadingOrderEntry {
   };
 }
 
-function toReadingOrder(
+export function toReadingOrder(
   row: ReadingOrderRow,
   entryRows: ReadingOrderEntryRow[]
 ): ReadingOrder {

@@ -17,8 +17,8 @@ Collectors already do the work of figuring out reading orders by hand, and that 
 - **Discovery** — full-text-ish search, publisher/category filters, and sort order over public reading orders.
 - **Reading-order detail pages** — title, creator, description, cover art, publisher/category badges, ordered entries with notes, save count, estimated book count, last-updated timestamp, related reading orders, a working save button, and owner-only edit/delete controls.
 - **Reading-order builder** — a validated form (React Hook Form + Zod, re-validated server-side) with a dynamic entry list, **drag-and-drop reordering** (keyboard-accessible via dnd-kit), a live preview, and real persistence via Server Actions.
-- **Saves and follows** — persisted in Postgres via Server Actions. Saving a reading order updates its stored save count through a database trigger; follower/following counts on profiles are real queries.
-- **Collector profiles** — avatar, bio, real stats (reading orders, reviews, followers, following), published reading orders (including your own private ones when you're viewing your own profile), recent reviews, and a working follow button (hidden on your own profile).
+- **Saves and follows** — persisted in Postgres via Server Actions. Saving a reading order updates its stored save count through a database trigger; follower/following counts on profiles are real queries. Your saved reading orders are listed back to you on your own profile.
+- **Collector profiles** — avatar, bio, real stats (reading orders, reviews, followers, following), published reading orders (including your own private ones when you're viewing your own profile), a private "Saved reading orders" section visible only to you, recent reviews, and a working follow button (hidden on your own profile).
 - **Reviews** — write and browse collected-edition reviews with an overall rating plus optional binding, paper-quality, mapping, and extras sub-ratings; rendered with both a visual and numeric rating.
 - **Image uploads** — cover art and avatars upload to Supabase Storage, scoped per user by folder-prefix RLS.
 - **Custom not-found pages** for missing reading orders and missing collector profiles, plus a global 404.
@@ -166,7 +166,7 @@ See [docs/architecture.md](docs/architecture.md) for the reasoning behind this s
 - **Clean cutover, no seed data.** The pre-existing mock reading orders, collector profiles, and reviews were not migrated into Supabase. Discover, reviews, and profile pages are empty until real accounts create real content. Mock data files remain in the repo, unused by the live repositories, as reference/future seed material.
 - **Reviews can be written but not edited or deleted from the UI.** The RLS policies allow owner-only update and delete; there's just no UI for either yet.
 - **No profile editing.** Avatar and profile fields are set once at onboarding — there's no edit-profile flow, so an avatar can't be changed after the fact from the UI.
-- **No saved-orders library view.** Saves persist and affect save counts, but there's no page listing the reading orders you've saved. Likewise, follows persist and drive counts, but there are no follower/following list views.
+- **No follower/following list views.** Follows persist and drive the counts on profiles, but there's no page listing who follows whom.
 - **No comments or collection tracking.** Owned/wanted/read status per edition is not implemented.
 - **No OAuth.** Email/password only.
 - **No DB-level enum for `publishers`/`categories`.** Validated by Zod on every write path; a manual database edit could bypass that. Acceptable tradeoff for now.
