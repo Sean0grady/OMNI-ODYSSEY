@@ -43,9 +43,58 @@ Supabase Storage-backed uploads via a shared `ImageUploadField`, replacing the p
 ### Test suite
 Vitest covering the pure functions in `lib/utilities` and `features/reading-orders/utils/filter-sort.ts`, plus the validation/ownership logic of the reading-order and profile Server Actions, using a shared chainable Supabase fake (`src/test/fake-supabase.ts`).
 
+### Visual redesign — The Slab (foundation only)
+Replaced the incumbent "ink and paper" editorial world, whose own theme
+comment named "superhero primary colors" as the thing it avoided. Direction
+chosen from seven grounded candidates by `concept-seed` (index 3, seed
+`615da846`): **The Slab** — CGC encapsulation and the Overstreet price guide,
+where a reading order is a graded, certified artifact rather than a card in a
+grid. The direction contract is recorded as an HTML comment in the root layout
+and verified present in the built output.
+
+Landed: `PRODUCT.md`; the certification-band token layer (light default from
+the use scene, dark as deep ink navy); Archivo + Zilla Slab replacing Fraunces;
+the `components/slab` encapsulation system; authored four-colour offset cover
+art replacing the gradient placeholder; `SectionHeading` rebuilt with the
+banned eyebrow prop removed from all call sites; and the landing page as the
+thesis surface. **Foundation only — see "Finish the redesign" below.**
+
 ## Planned
 
 Listed roughly in dependency order — most of these build on the repository seam already established, per `docs/architecture.md`.
+
+### Finish the redesign (in flight — highest priority)
+The token layer already propagates site-wide, so every route reads in the new
+palette and type, but only the landing page has been recomposed into the slab
+vocabulary. Remaining, on branch `redesign/the-slab`:
+
+- **App surfaces still in their old composition:** `/discover` (intended as the
+  census/price-guide listing), reading-order detail (the opened slab with the
+  entries as a numbered run), profile (the Registry Set), `/reviews` and
+  `/reviews/create`, the reading-order create/edit forms, the auth and
+  onboarding pages, and the not-found pages.
+- **Site chrome untouched:** `SiteHeader` and `SiteFooter` are still the
+  incumbent design, including the search field and the account menu.
+- **Empty states** need rebuilding in-world ("not yet submitted" rather than a
+  blank), which matters disproportionately because the catalogue is thin —
+  see the "Design for empty" product principle.
+- **Seed demo content:** real collected editions, authored at full fidelity and
+  labeled synthetic. Only the single hero sample record exists so far.
+- **Responsive:** mobile has not been checked at all yet. Committed directions
+  usually break there first.
+- **Hero slab height** pushes the fold on a short viewport; needs a cap or a
+  recomposed hero.
+- **Exit condition not yet discharged:** the run's own contract ends with the
+  finish review (`impeccable-finish-reviewer`), its verdict, and `DESIGN.md`
+  written from the built world by `impeccable-documenter`. Until those run,
+  the redesign is unfinished by its own terms.
+
+### Image optimization for uploaded covers
+`next.config.ts` carries no `images.remotePatterns`, so cover art and avatars
+now served from Supabase Storage bypass Next's image optimizer entirely. The
+external-cover component sets `unoptimized` deliberately (arbitrary
+user-pasted URLs would turn the server into an open image proxy), but
+Storage-hosted images are a known host and should be allowlisted and optimized.
 
 ### Standardized collected-edition database
 A real `collected_editions` catalog (rather than free-text entry titles) that reading-order entries and reviews can reference by ID, enabling cross-referencing, deduplication, and eventually structured search/filter by edition attributes (binding, publisher imprint, page count, etc.). Several items below depend on this.
